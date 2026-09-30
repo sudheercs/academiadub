@@ -20,6 +20,15 @@ interface Topic {
   subject: { slug: string; name: string; icon: string };
 }
 
+interface Download {
+  id: string;
+  title: string;
+  description: string;
+  file_url: string;
+  file_size_bytes: number;
+  mime_type: string;
+}
+
 async function getTopic(subjectSlug: string, topicSlug: string): Promise<Topic | null> {
   const apiBase = process.env.NEXT_INTERNAL_API_URL || "http://localhost:8000";
   try {
@@ -35,6 +44,17 @@ async function getTopic(subjectSlug: string, topicSlug: string): Promise<Topic |
   }
 }
 
+async function getDownloads(topicId: number): Promise<Download[]> {
+  const apiBase = process.env.NEXT_INTERNAL_API_URL || "http://localhost:8000";
+  try {
+    const res = await fetch(`${apiBase}/api/downloads/files/?topic=${topicId}`, { cache: "no-store" });
+    const data = await res.json();
+    return data.results || data;
+  } catch {
+    return [];
+  }
+}
+
 const difficultyColors: Record<string, string> = {
   beginner: "#4ade80",
   intermediate: "#fb923c",
@@ -47,6 +67,7 @@ export default async function TopicPage({
   params: { slug: string; topicSlug: string };
 }) {
   const topic = await getTopic(params.slug, params.topicSlug);
+  const downloads = topic ? await getDownloads(topic.id) : [];
 
   if (!topic)
     return (
@@ -94,6 +115,36 @@ export default async function TopicPage({
       <article className={styles.article}>
         <BlockRenderer blocks={topic.content} />
       </article>
+
+      {/* Downloads Section */}
+      {downloads.length > 0 && (
+        <div className={styles.downloads}>
+          <h3 className={styles.downloadsTitle}>Attachments</h3>
+          <ul className={styles.downloadList}>
+            {downloads.map((d) => (
+              <li key={d.id} className={styles.downloadItem}>
+                <a
+                  href={`http://localhost:8000/api/downloads/files/${d.id}/serve/`}
+                  className={styles.downloadLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <span className={styles.downloadIcon}>📄</span>
+                  <div className={styles.downloadInfo}>
+                    <strong>{d.title}</strong>
+                    {d.description && <p>{d.description}</p>}
+                  </div>
+                  {d.file_size_bytes && (
+                    <span className={styles.downloadSize}>
+                      {Math.round(d.file_size_bytes / 1024)} KB
+                    </span>
+                  )}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {/* Footer nav */}
       <div className={styles.footer}>

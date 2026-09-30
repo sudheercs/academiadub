@@ -3,6 +3,8 @@
 from django.contrib import admin
 from django.urls import path, include
 from django.http import JsonResponse
+from django.conf import settings
+from django.conf.urls.static import static
 
 
 def health_check(request):
@@ -24,7 +26,7 @@ urlpatterns = [
     path("api/content/", include("apps.content.urls")),
 
     # Phase 4 — Downloads
-    # path("api/downloads/", include("apps.downloads.urls")),
+    path("api/downloads/", include("apps.downloads.urls")),
 
     # Phase 5 — Practice & Code Lab
     # path("api/practice/", include("apps.practice.urls")),
@@ -36,3 +38,6 @@ urlpatterns = [
     # Platform (cross-cutting)
     # path("api/platform/", include("apps.platform.urls")),
 ]
+
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
