@@ -108,7 +108,7 @@ SESSION_CACHE_ALIAS = "default"
 
 # ── Auth ──────────────────────────────────────────────────────────────────────
 
-# AUTH_USER_MODEL = "identity.User"  # Uncomment in Phase 1 when User model is defined
+AUTH_USER_MODEL = "identity.User"
 
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},

@@ -15,10 +15,10 @@ urlpatterns = [
     path("api/health/", health_check, name="health-check"),
 
     # Phase 1 — Identity & Access
-    # path("api/auth/", include("apps.identity.urls")),
+    path("api/auth/", include("apps.identity.urls")),
 
     # Phase 2 — Catalogue
-    # path("api/catalogue/", include("apps.catalogue.urls")),
+    path("api/catalogue/", include("apps.catalogue.urls")),
 
     # Phase 3 — Content Engine
     # path("api/content/", include("apps.content.urls")),
