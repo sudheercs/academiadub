@@ -1,95 +1,63 @@
-import Image from "next/image";
+import Link from "next/link";
 import styles from "./page.module.css";
 
-export default function Home() {
-  return (
-    <div className={styles.page}>
-      <main className={styles.main}>
-        <Image
-          className={styles.logo}
-          src="https://nextjs.org/icons/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol>
-          <li>
-            Get started by editing <code>app/page.tsx</code>.
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+interface Subject {
+  id: number;
+  slug: string;
+  name: string;
+  icon: string;
+  description: string;
+}
 
-        <div className={styles.ctas}>
-          <a
-            className={styles.primary}
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className={styles.logo}
-              src="https://nextjs.org/icons/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-            className={styles.secondary}
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className={styles.footer}>
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+// Fetch data on the server side
+async function getSubjects() {
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+  // The frontend Docker container runs on the same docker network, but Server Components 
+  // might fetch from localhost if using host networking, or `api` if using docker DNS.
+  // Next.js config uses standalone, but since we are just doing a quick fetch, we'll try localhost first.
+  
+  try {
+    // Use internal docker DNS for server-side fetches; fallback to localhost for outside-docker dev
+    const apiBase = process.env.NEXT_INTERNAL_API_URL || process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+    let res = await fetch(`${apiBase}/api/catalogue/subjects/`, { cache: 'no-store' });
+    if (!res.ok) throw new Error(`Failed to fetch subjects: ${res.status} ${res.statusText}`);
+    const data = await res.json();
+    // Django REST Framework pagination returns { count, next, previous, results }
+    return data.results || data;
+  } catch (error) {
+    console.error("Error fetching subjects:", error);
+    return [];
+  }
+}
+
+export default async function Home() {
+  const subjects = await getSubjects();
+
+  return (
+    <main className={styles.container}>
+      <div className={styles.hero}>
+        <h1 className={styles.title}>Welcome to AcademiaHub</h1>
+        <p className={styles.subtitle}>
+          Your premium destination for high-quality, interactive learning. 
+          Explore our catalogue and start mastering new skills today.
+        </p>
+      </div>
+
+      <div className={styles.grid}>
+        {subjects.length > 0 ? (
+          subjects.map((subject: Subject) => (
+            <Link key={subject.id} href={`/subjects/${subject.slug}`} className={`${styles.card} glass`} style={{ textDecoration: 'none' }}>
+              <div className={styles.cardIcon}>{subject.icon}</div>
+              <h3 className={styles.cardTitle}>{subject.name}</h3>
+              <p className={styles.cardDesc}>{subject.description}</p>
+            </Link>
+          ))
+        ) : (
+          <div className="glass" style={{ padding: "2rem", gridColumn: "1 / -1", textAlign: "center" }}>
+            <p>No subjects found. Is the API running and seeded?</p>
+          </div>
+        )}
+      </div>
+    </main>
   );
 }

@@ -21,7 +21,7 @@ urlpatterns = [
     path("api/catalogue/", include("apps.catalogue.urls")),
 
     # Phase 3 — Content Engine
-    # path("api/content/", include("apps.content.urls")),
+    path("api/content/", include("apps.content.urls")),
 
     # Phase 4 — Downloads
     # path("api/downloads/", include("apps.downloads.urls")),

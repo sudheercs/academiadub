@@ -1,0 +1,128 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.empty {
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+/* Markdown text */
+.markdown {
+  font-size: 1.05rem;
+  line-height: 1.8;
+  color: var(--text-main);
+}
+
+.markdown strong {
+  color: #fff;
+  font-weight: 600;
+}
+
+.markdown code {
+  background: rgba(56, 189, 248, 0.15);
+  color: #38bdf8;
+  padding: 0.1em 0.4em;
+  border-radius: 4px;
+  font-size: 0.9em;
+  font-family: 'Geist Mono', 'Fira Code', monospace;
+}
+
+/* Code block */
+.codeWrapper {
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.langBadge {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.75rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+  background: rgba(0, 0, 0, 0.3);
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+}
+
+.pre {
+  margin: 0;
+  padding: 1.5rem;
+  background: #0d1117;
+  overflow-x: auto;
+  font-family: 'Geist Mono', 'Fira Code', 'Courier New', monospace;
+  font-size: 0.9rem;
+  line-height: 1.7;
+}
+
+.pre code {
+  background: transparent;
+  color: #e6edf3;
+}
+
+/* YouTube video */
+.videoFigure {
+  margin: 0;
+}
+
+.videoWrapper {
+  position: relative;
+  padding-bottom: 56.25%;
+  height: 0;
+  overflow: hidden;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.videoWrapper iframe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+.caption {
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  margin-top: 0.5rem;
+  font-style: italic;
+}
+
+/* Callout */
+.callout {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+  background: rgba(56, 189, 248, 0.08);
+  border: 1px solid rgba(56, 189, 248, 0.2);
+  border-radius: 10px;
+  color: var(--text-main);
+}
+
+.calloutIcon {
+  font-size: 1.2rem;
+  flex-shrink: 0;
+  margin-top: 0.1rem;
+}
+
+/* Image */
+.imageFigure {
+  margin: 0;
+}
+
+.image {
+  width: 100%;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
