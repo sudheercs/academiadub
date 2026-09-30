@@ -1,0 +1,20 @@
+# Development-only dependencies (includes all production deps)
+-r requirements.txt
+
+# Linting & formatting
+black==24.8.0
+ruff==0.6.8
+isort==5.13.2
+pre-commit==3.8.0
+
+# Security scanning
+bandit==1.7.9
+pip-audit==2.7.3
+
+# Testing
+pytest==8.3.3
+pytest-django==4.9.0
+pytest-cov==5.0.0
+factory-boy==3.3.1
+Faker==30.3.0
+httpretty==1.1.4
