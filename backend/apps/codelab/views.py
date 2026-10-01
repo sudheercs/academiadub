@@ -11,8 +11,10 @@ logger = logging.getLogger("apps")
 class CodeRunView(views.APIView):
     """
     Proxy endpoint that forwards code execution requests to the isolated coderunner service.
-    Rate-limited to 20 runs/minute per authenticated user.
+    - Open to all (unauthenticated users can try the playground)
+    - Rate-limited: anon 20/min (IP-based), authenticated 60/min
     """
+    permission_classes = [permissions.AllowAny]
     throttle_classes = [CodeRunRateThrottle]
 
     def post(self, request):

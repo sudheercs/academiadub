@@ -9,6 +9,6 @@ class LoginRateThrottle(AnonRateThrottle):
     scope = "login"
 
 
-class CodeRunRateThrottle(UserRateThrottle):
-    """20 code executions per minute per authenticated user."""
+class CodeRunRateThrottle(AnonRateThrottle):
+    """20 code executions per minute per IP (works for both anon and authenticated)."""
     scope = "coderun"
