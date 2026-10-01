@@ -33,7 +33,7 @@ urlpatterns = [
     path("api/codelab/", include("apps.codelab.urls")),
 
     # Phase 6 — Classes
-    # path("api/classes/", include("apps.classes.urls")),
+    path("api/classes/", include("apps.classes.urls")),
 
     # Platform (cross-cutting)
     # path("api/platform/", include("apps.platform.urls")),

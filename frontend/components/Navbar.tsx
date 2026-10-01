@@ -10,6 +10,9 @@ export default function Navbar() {
           <span className={styles.logoText}>AcademiaHub</span>
         </Link>
         <div className={styles.actions}>
+          <Link href="/classes" className={styles.navLink}>
+            Classes
+          </Link>
           <Link href="/login" className={styles.loginBtn}>
             Log In
           </Link>
