@@ -7,16 +7,16 @@ class DownloadAdmin(admin.ModelAdmin):
     list_display = ("title", "topic", "access_level", "mime_type", "file_size_bytes", "uploaded_by")
     list_filter = ("access_level", "mime_type")
     search_fields = ("title", "topic__title")
-    readonly_fields = ("file_size_bytes", "mime_type")
+    readonly_fields = ("file_size_bytes", "mime_type", "created_at")
     raw_id_fields = ("topic", "uploaded_by")
 
 
 @admin.register(DownloadLog)
 class DownloadLogAdmin(admin.ModelAdmin):
-    list_display = ("download", "user", "ip_address", "timestamp")
-    list_filter = ("timestamp",)
+    list_display = ("download", "user", "ip_address", "downloaded_at")
+    list_filter = ("downloaded_at",)
     search_fields = ("user__email", "download__title")
-    readonly_fields = ("download", "user", "ip_address", "user_agent", "timestamp")
+    readonly_fields = ("download", "user", "ip_address", "user_agent", "downloaded_at")
 
     def has_add_permission(self, request):
         return False  # Audit log — no manual entries
