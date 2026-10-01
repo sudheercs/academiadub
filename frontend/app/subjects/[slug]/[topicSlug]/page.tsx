@@ -32,13 +32,23 @@ interface Download {
 async function getTopic(subjectSlug: string, topicSlug: string): Promise<Topic | null> {
   const apiBase = process.env.NEXT_INTERNAL_API_URL || "http://localhost:8000";
   try {
-    const res = await fetch(
+    // First fetch the list to find the topic's ID
+    const listRes = await fetch(
       `${apiBase}/api/catalogue/topics/?subject=${subjectSlug}`,
       { cache: "no-store" }
     );
-    const data = await res.json();
-    const topics: Topic[] = data.results || data;
-    return topics.find((t) => t.slug === topicSlug) || null;
+    const listData = await listRes.json();
+    const topics = listData.results || listData;
+    const stub = topics.find((t: { slug: string }) => t.slug === topicSlug);
+    if (!stub) return null;
+
+    // Then fetch the detail endpoint to get the content blocks
+    const detailRes = await fetch(
+      `${apiBase}/api/catalogue/topics/${stub.id}/`,
+      { cache: "no-store" }
+    );
+    if (!detailRes.ok) return null;
+    return await detailRes.json();
   } catch {
     return null;
   }
