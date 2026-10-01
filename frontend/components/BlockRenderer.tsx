@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import styles from "./BlockRenderer.module.css";
+import CodeLab from "./CodeLab";
 
 // Dynamically load Prism for syntax highlighting
 declare global {
@@ -93,6 +94,10 @@ export default function BlockRenderer({ blocks }: { blocks: Block[] }) {
           case "code":
             return (
               <CodeBlock key={i} content={block.content || ""} language={block.language} />
+            );
+          case "code_lab":
+            return (
+              <CodeLab key={i} initialCode={block.content || ""} language={block.language || "text"} />
             );
           case "youtube_video":
             return <YoutubeBlock key={i} url={block.url || ""} caption={block.caption} />;

@@ -65,7 +65,7 @@ def seed():
             {"type": "callout", "content": "Python uses indentation instead of braces. Keep your code clean!"},
             {"type": "code", "language": "python", "content": "name = 'Alice'\nage = 30\nheight = 5.6\nprint(f'{name} is {age} years old')"},
             {"type": "markdown", "content": "Python has **four** core data types:\n- `str` — text\n- `int` — whole numbers\n- `float` — decimals\n- `bool` — True / False"},
-            {"type": "code", "language": "python", "content": "x = 10       # int\nprice = 4.99  # float\nlabel = 'hi' # str\nactive = True # bool\nprint(type(x))  # <class int>"},
+            {"type": "code_lab", "language": "python", "content": "x = 10       # int\nprice = 4.99  # float\nlabel = 'hi' # str\nactive = True # bool\nprint(type(x))  # <class int>\n\n# Try changing x to a float and run it!"},
             {"type": "youtube_video", "url": "https://www.youtube.com/watch?v=kqtD5dpn9C8", "caption": "Python for Beginners - Full Course"}
         ]
     )

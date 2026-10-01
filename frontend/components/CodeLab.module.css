@@ -1,0 +1,102 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  margin: 1.5rem 0;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(11, 15, 25, 0.8);
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.languageBadge {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  background: rgba(0, 0, 0, 0.3);
+  padding: 0.2rem 0.6rem;
+  border-radius: 4px;
+}
+
+.runButton {
+  background: var(--accent);
+  color: #0b0f19;
+  border: none;
+  padding: 0.4rem 1rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.runButton:hover:not(:disabled) {
+  background: #7dd3fc;
+  box-shadow: 0 0 10px var(--accent-glow);
+}
+
+.runButton:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.editorWrapper {
+  display: flex;
+}
+
+.editor {
+  width: 100%;
+  min-height: 150px;
+  padding: 1rem;
+  background: transparent;
+  color: #e6edf3;
+  border: none;
+  font-family: 'Geist Mono', 'Fira Code', monospace;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  resize: vertical;
+}
+
+.editor:focus {
+  outline: none;
+}
+
+.outputWrapper {
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.4);
+}
+
+.outputHeader {
+  padding: 0.5rem 1rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.output {
+  margin: 0;
+  padding: 1rem;
+  font-family: 'Geist Mono', 'Fira Code', monospace;
+  font-size: 0.85rem;
+  color: #a3b3cc;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.error .outputHeader {
+  color: #f87171;
+}
+
+.error .output {
+  color: #f87171;
+}

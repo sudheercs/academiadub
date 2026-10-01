@@ -30,7 +30,7 @@ urlpatterns = [
 
     # Phase 5 — Practice & Code Lab
     # path("api/practice/", include("apps.practice.urls")),
-    # path("api/codelab/", include("apps.codelab.urls")),
+    path("api/codelab/", include("apps.codelab.urls")),
 
     # Phase 6 — Classes
     # path("api/classes/", include("apps.classes.urls")),
