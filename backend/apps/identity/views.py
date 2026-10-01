@@ -4,12 +4,14 @@ from rest_framework.permissions import AllowAny
 from rest_framework_simplejwt.views import TokenObtainPairView
 from django.contrib.auth import get_user_model
 from .serializers import UserRegistrationSerializer, CustomTokenObtainPairSerializer, UserSerializer
+from academiadub.throttles import LoginRateThrottle
 
 User = get_user_model()
 
 
 class CustomTokenObtainPairView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
+    throttle_classes = [LoginRateThrottle]
 
 
 class UserRegistrationView(generics.CreateAPIView):

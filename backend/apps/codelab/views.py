@@ -1,13 +1,19 @@
+import logging
 import requests
 from django.conf import settings
 from rest_framework import views, status, permissions
 from rest_framework.response import Response
+from academiadub.throttles import CodeRunRateThrottle
+
+logger = logging.getLogger("apps")
+
 
 class CodeRunView(views.APIView):
     """
     Proxy endpoint that forwards code execution requests to the isolated coderunner service.
+    Rate-limited to 20 runs/minute per authenticated user.
     """
-    # permission_classes = [permissions.IsAuthenticated]
+    throttle_classes = [CodeRunRateThrottle]
 
     def post(self, request):
         language = request.data.get("language")

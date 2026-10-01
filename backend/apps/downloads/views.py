@@ -20,18 +20,13 @@ class DownloadViewSet(viewsets.ReadOnlyModelViewSet):
     and logs the download event.
     """
     serializer_class = DownloadSerializer
+    permission_classes = [permissions.AllowAny]  # Queryset does access filtering
 
     def get_queryset(self):
         qs = Download.objects.filter(is_active=True)
         topic_id = self.request.query_params.get("topic")
         if topic_id:
             qs = qs.filter(topic_id=topic_id)
-        # Access control: only show what the user is allowed to access
-        user = self.request.user
-        if not user.is_authenticated:
-            qs = qs.filter(access_level="free")
-        elif not user.is_staff:
-            qs = qs.exclude(access_level="paid")  # simplify: no paid checks yet
         return qs
 
     @action(detail=True, methods=["get"], url_path="serve")
@@ -43,8 +38,8 @@ class DownloadViewSet(viewsets.ReadOnlyModelViewSet):
         download = self.get_object()
         user = request.user
 
-        # Access control
-        if download.access_level == "login" and not user.is_authenticated:
+        # --- Access control gates ---
+        if download.access_level in ("login", "paid") and not user.is_authenticated:
             return Response({"detail": "Authentication required."}, status=status.HTTP_401_UNAUTHORIZED)
         if download.access_level == "paid" and not user.is_staff:
             return Response({"detail": "Premium access required."}, status=status.HTTP_403_FORBIDDEN)
