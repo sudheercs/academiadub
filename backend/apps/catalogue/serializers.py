@@ -26,13 +26,36 @@ class TopicVersionSerializer(serializers.ModelSerializer):
 class TopicDetailSerializer(serializers.ModelSerializer):
     subject = SubjectSerializer(read_only=True)
     content = serializers.SerializerMethodField()
+    access_gated = serializers.SerializerMethodField()
 
     class Meta:
         model = Topic
-        fields = ("id", "subject", "parent", "slug", "title", "difficulty", "access_level", "status", "order", "content")
+        fields = (
+            "id", "subject", "parent", "slug", "title",
+            "difficulty", "access_level", "status", "order",
+            "content", "access_gated"
+        )
+
+    def _requesting_user(self):
+        return self.context.get("request") and self.context["request"].user
+
+    def _can_access(self, obj):
+        user = self._requesting_user()
+        if obj.access_level == "free":
+            return True
+        if obj.access_level == "login":
+            return user and user.is_authenticated
+        if obj.access_level == "paid":
+            return user and (user.is_staff or getattr(user, "has_active_subscription", False))
+        return False
+
+    def get_access_gated(self, obj):
+        """True when the user is not allowed to see the content."""
+        return not self._can_access(obj)
 
     def get_content(self, obj):
-        # Only return the content blocks if it's published and we have a current_version_id
+        if not self._can_access(obj):
+            return []  # Blocked — return empty, frontend shows the gate
         if obj.status == "published" and obj.current_version_id:
             version = obj.versions.filter(version_no=obj.current_version_id).first()
             if version:

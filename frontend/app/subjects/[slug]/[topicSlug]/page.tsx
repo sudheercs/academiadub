@@ -16,6 +16,7 @@ interface Topic {
   title: string;
   difficulty: string;
   access_level: string;
+  access_gated: boolean;
   content: Block[];
   subject: { slug: string; name: string; icon: string };
 }
@@ -32,7 +33,6 @@ interface Download {
 async function getTopic(subjectSlug: string, topicSlug: string): Promise<Topic | null> {
   const apiBase = process.env.NEXT_INTERNAL_API_URL || "http://localhost:8000";
   try {
-    // First fetch the list to find the topic's ID
     const listRes = await fetch(
       `${apiBase}/api/catalogue/topics/?subject=${subjectSlug}`,
       { cache: "no-store" }
@@ -42,7 +42,6 @@ async function getTopic(subjectSlug: string, topicSlug: string): Promise<Topic |
     const stub = topics.find((t: { slug: string }) => t.slug === topicSlug);
     if (!stub) return null;
 
-    // Then fetch the detail endpoint to get the content blocks
     const detailRes = await fetch(
       `${apiBase}/api/catalogue/topics/${stub.id}/`,
       { cache: "no-store" }
@@ -71,13 +70,40 @@ const difficultyColors: Record<string, string> = {
   advanced: "#f87171",
 };
 
+function AccessGate({ level }: { level: string }) {
+  const isPaid = level === "paid";
+  return (
+    <div className={styles.gate}>
+      <span className={styles.gateIcon}>{isPaid ? "💎" : "🔐"}</span>
+      <h2 className={styles.gateTitle}>
+        {isPaid ? "Premium Content" : "Login Required"}
+      </h2>
+      <p className={styles.gateDesc}>
+        {isPaid
+          ? "This topic is part of a paid plan. Upgrade to access all premium content."
+          : "You need to be signed in to read this topic. It's free — just create an account."}
+      </p>
+      <div className={styles.gateActions}>
+        <Link href="/login" className={styles.gateLogin}>
+          Log In
+        </Link>
+        {!isPaid && (
+          <Link href="/register" className={styles.gateRegister}>
+            Sign Up Free
+          </Link>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default async function TopicPage({
   params,
 }: {
   params: { slug: string; topicSlug: string };
 }) {
   const topic = await getTopic(params.slug, params.topicSlug);
-  const downloads = topic ? await getDownloads(topic.id) : [];
+  const downloads = topic && !topic.access_gated ? await getDownloads(topic.id) : [];
 
   if (!topic)
     return (
@@ -121,39 +147,46 @@ export default async function TopicPage({
       {/* Divider */}
       <hr className={styles.divider} />
 
-      {/* Content Blocks */}
-      <article className={styles.article}>
-        <BlockRenderer blocks={topic.content} />
-      </article>
+      {/* Access gate OR content */}
+      {topic.access_gated ? (
+        <AccessGate level={topic.access_level} />
+      ) : (
+        <>
+          {/* Content Blocks */}
+          <article className={styles.article}>
+            <BlockRenderer blocks={topic.content} />
+          </article>
 
-      {/* Downloads Section */}
-      {downloads.length > 0 && (
-        <div className={styles.downloads}>
-          <h3 className={styles.downloadsTitle}>Attachments</h3>
-          <ul className={styles.downloadList}>
-            {downloads.map((d) => (
-              <li key={d.id} className={styles.downloadItem}>
-                <a
-                  href={`http://localhost:8000/api/downloads/files/${d.id}/serve/`}
-                  className={styles.downloadLink}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  <span className={styles.downloadIcon}>📄</span>
-                  <div className={styles.downloadInfo}>
-                    <strong>{d.title}</strong>
-                    {d.description && <p>{d.description}</p>}
-                  </div>
-                  {d.file_size_bytes && (
-                    <span className={styles.downloadSize}>
-                      {Math.round(d.file_size_bytes / 1024)} KB
-                    </span>
-                  )}
-                </a>
-              </li>
-            ))}
-          </ul>
-        </div>
+          {/* Downloads Section */}
+          {downloads.length > 0 && (
+            <div className={styles.downloads}>
+              <h3 className={styles.downloadsTitle}>Attachments</h3>
+              <ul className={styles.downloadList}>
+                {downloads.map((d) => (
+                  <li key={d.id} className={styles.downloadItem}>
+                    <a
+                      href={`http://localhost:8000/api/downloads/files/${d.id}/serve/`}
+                      className={styles.downloadLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <span className={styles.downloadIcon}>📄</span>
+                      <div className={styles.downloadInfo}>
+                        <strong>{d.title}</strong>
+                        {d.description && <p>{d.description}</p>}
+                      </div>
+                      {d.file_size_bytes && (
+                        <span className={styles.downloadSize}>
+                          {Math.round(d.file_size_bytes / 1024)} KB
+                        </span>
+                      )}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </>
       )}
 
       {/* Footer nav */}
