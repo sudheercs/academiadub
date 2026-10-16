@@ -1,9 +1,34 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
-from .models import Profile, Role, UserRole
+from .models import Permission, Profile, Role, UserRole
 
 User = get_user_model()
+
+DEFAULT_ROLE_PERMISSIONS = {
+    "student": ["topic:read"],
+    "editor": ["topic:read", "topic:manage"],
+    "reviewer": ["topic:read", "topic:manage", "topic:publish"],
+    "instructor": ["class:create", "class:manage", "class:view_analytics"],
+    "admin": [
+        "user:manage",
+        "topic:manage",
+        "topic:publish",
+        "class:create",
+        "class:manage",
+        "class:view_analytics",
+    ],
+}
+
+
+def ensure_role_permissions(role):
+    for permission_key in DEFAULT_ROLE_PERMISSIONS.get(role.key, []):
+        permission, _ = Permission.objects.get_or_create(
+            key=permission_key,
+            defaults={"description": permission_key.replace(":", " ").title()},
+        )
+        role.permissions.add(permission)
+    return role
 
 
 class ProfileSerializer(serializers.ModelSerializer):
@@ -30,14 +55,15 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         fields = ("email", "password", "profile")
 
     def create(self, validated_data):
-        profile_data = validated_data.pop('profile')
-        user = User.objects.create_user(**validated_data)
+        profile_data = validated_data.pop("profile")
+        password = validated_data.pop("password")
+        user = User.objects.create_user(password=password, **validated_data)
         Profile.objects.create(user=user, **profile_data)
-        
-        # Assign default 'student' role
+
         student_role, _ = Role.objects.get_or_create(key="student", defaults={"name": "Student"})
+        ensure_role_permissions(student_role)
         UserRole.objects.create(user=user, role=student_role, scope_type="global")
-        
+
         return user
 
 

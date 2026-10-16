@@ -3,14 +3,33 @@ Django base settings for AcademiaHub.
 Do NOT use this file directly — import from local.py / staging.py / production.py.
 """
 
+import os
 from pathlib import Path
 from decouple import config, Csv
+from django.core.exceptions import ImproperlyConfigured
+
+
+def _env_value(name, default=None, *, cast=None):
+    """Return an env value from the shell or a safe default."""
+    value = os.getenv(name)
+    if value is not None:
+        if cast is not None:
+            return cast(value)
+        return value
+    if default is not None:
+        if cast is not None:
+            if isinstance(default, str):
+                return cast(default)
+            return default
+        return default
+    return config(name, default=default, cast=cast)
+
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
-SECRET_KEY = config("SECRET_KEY")
-DEBUG = config("DEBUG", default=False, cast=bool)
-ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="localhost", cast=Csv())
+SECRET_KEY = _env_value("SECRET_KEY", default="dev-secret-key-not-for-production")
+DEBUG = _env_value("DEBUG", default=False, cast=lambda value: value.lower() in {"1", "true", "yes", "on"})
+ALLOWED_HOSTS = _env_value("ALLOWED_HOSTS", default="localhost", cast=Csv())
 
 # ── Installed apps ───────────────────────────────────────────────────────────
 
@@ -26,6 +45,7 @@ DJANGO_APPS = [
 THIRD_PARTY_APPS = [
     "rest_framework",
     "rest_framework_simplejwt",
+    "rest_framework_simplejwt.token_blacklist",
     "corsheaders",
     "django_filters",
     "storages",
@@ -83,25 +103,43 @@ ASGI_APPLICATION = "academiadub.asgi.application"
 
 import dj_database_url
 
+DATABASE_URL = os.getenv("DATABASE_URL") or config("DATABASE_URL", default="")
+if not DATABASE_URL:
+    raise ImproperlyConfigured("DATABASE_URL must be set to a mysql:// connection string.")
+
 DATABASES = {
-    "default": dj_database_url.config(
-        env="DATABASE_URL",
-        conn_max_age=600,
-        conn_health_checks=True,
+    "default": dj_database_url.parse(DATABASE_URL, conn_max_age=600, conn_health_checks=True)
+}
+_SUPPORTED_ENGINES = {
+    "django.db.backends.mysql",
+    "django.db.backends.postgresql",
+}
+if DATABASES["default"]["ENGINE"] not in _SUPPORTED_ENGINES:
+    raise ImproperlyConfigured(
+        f"DATABASE_URL engine '{DATABASES['default']['ENGINE']}' is not supported. "
+        "Use a mysql:// or postgres:// URL."
     )
-}
 
-# ── Cache (Redis) ─────────────────────────────────────────────────────────────
+# ── Cache ─────────────────────────────────────────────────────────────────────
 
-CACHES = {
-    "default": {
-        "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": config("REDIS_URL", default="redis://redis:6379/0"),
-        "OPTIONS": {
-            "CLIENT_CLASS": "django_redis.client.DefaultClient",
-        },
+REDIS_URL = os.getenv("REDIS_URL") or ""
+if REDIS_URL:
+    CACHES = {
+        "default": {
+            "BACKEND": "django_redis.cache.RedisCache",
+            "LOCATION": REDIS_URL,
+            "OPTIONS": {
+                "CLIENT_CLASS": "django_redis.client.DefaultClient",
+            },
+        }
     }
-}
+else:
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+            "LOCATION": "academiadub-local-cache",
+        }
+    }
 
 SESSION_ENGINE = "django.contrib.sessions.backends.cache"
 SESSION_CACHE_ALIAS = "default"
@@ -123,7 +161,7 @@ from datetime import timedelta
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
-        "rest_framework_simplejwt.authentication.JWTAuthentication",
+        "apps.identity.authentication.CookieJWTAuthentication",
     ],
     "DEFAULT_PERMISSION_CLASSES": [
         "rest_framework.permissions.IsAuthenticated",
@@ -194,7 +232,18 @@ AWS_S3_SIGNATURE_VERSION = "s3v4"
 
 # ── CORS ──────────────────────────────────────────────────────────────────────
 
-CORS_ALLOWED_ORIGINS = config("CORS_ALLOWED_ORIGINS", default="http://localhost:3000", cast=Csv())
+CORS_ALLOWED_ORIGINS = config(
+    "CORS_ALLOWED_ORIGINS",
+    default="http://localhost:3000,http://127.0.0.1:3000",
+    cast=Csv(),
+)
+CORS_ALLOW_CREDENTIALS = True
+CSRF_TRUSTED_ORIGINS = config(
+    "CSRF_TRUSTED_ORIGINS",
+    default="http://localhost:3000,http://127.0.0.1:3000",
+    cast=Csv(),
+)
+AUTH_COOKIE_DOMAIN = config("AUTH_COOKIE_DOMAIN", default="")
 
 # ── Security headers (tightened per environment) ──────────────────────────────
 
@@ -202,6 +251,8 @@ X_FRAME_OPTIONS = "DENY"
 SECURE_CONTENT_TYPE_NOSNIFF = True
 SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")  # Trust proxy in prod
+SESSION_COOKIE_SAMESITE = "Lax"
+CSRF_COOKIE_SAMESITE = "Lax"
 
 # ── Logging ───────────────────────────────────────────────────────────────────
 
@@ -237,5 +288,8 @@ LOGGING = {
 
 ENABLE_CODE_LAB = config("ENABLE_CODE_LAB", default=False, cast=bool)
 ENABLE_PAYMENTS = config("ENABLE_PAYMENTS", default=False, cast=bool)
-CODE_RUNNER_URL = config("CODE_RUNNER_URL", default="http://coderunner:9000")
+CODE_RUNNER_SOCKET = config(
+    "CODE_RUNNER_SOCKET",
+    default="/run/coderunner/runner.sock",
+)
 CODE_RUNNER_TIMEOUT_SECONDS = config("CODE_RUNNER_TIMEOUT_SECONDS", default=5, cast=int)

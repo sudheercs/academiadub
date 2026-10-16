@@ -1,7 +1,7 @@
 from django.urls import path, include
 from rest_framework_nested import routers
 from rest_framework.routers import DefaultRouter
-from .views import ClassroomViewSet, AssignmentViewSet, JoinByCodeView
+from .views import ClassroomViewSet, AssignmentViewSet, JoinByCodeView, ClassCodeLoginView
 
 router = DefaultRouter()
 router.register("classrooms", ClassroomViewSet, basename="classroom")
@@ -14,4 +14,5 @@ urlpatterns = [
     path("", include(router.urls)),
     path("", include(classes_router.urls)),
     path("join/", JoinByCodeView.as_view(), name="join-by-code"),
+    path("login-with-code/", ClassCodeLoginView.as_view(), name="class-code-login"),
 ]

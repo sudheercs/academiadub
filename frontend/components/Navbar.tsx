@@ -1,7 +1,12 @@
 import Link from "next/link";
+import { cookies } from "next/headers";
 import styles from "./Navbar.module.css";
+import LogoutButton from "./LogoutButton";
+import SearchBar from "./SearchBar";
 
-export default function Navbar() {
+export default async function Navbar() {
+  const token = (await cookies()).get("access_token")?.value;
+
   return (
     <nav className={styles.navbar}>
       <div className={styles.container}>
@@ -10,12 +15,22 @@ export default function Navbar() {
           <span className={styles.logoText}>AcademiaHub</span>
         </Link>
         <div className={styles.actions}>
-          <Link href="/classes" className={styles.navLink}>
-            Classes
+          <SearchBar />
+          <Link href="/codelab" className={styles.navLink}>
+            Code Lab ⚡
           </Link>
-          <Link href="/login" className={styles.loginBtn}>
-            Log In
-          </Link>
+          {token && (
+            <Link href="/mycode" className={styles.navLink}>
+              My Code 📁
+            </Link>
+          )}
+          {token ? (
+            <LogoutButton />
+          ) : (
+            <Link href="/login" className={styles.loginBtn}>
+              Log In
+            </Link>
+          )}
         </div>
       </div>
     </nav>

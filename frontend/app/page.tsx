@@ -11,15 +11,11 @@ interface Subject {
 
 // Fetch data on the server side
 async function getSubjects() {
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-  // The frontend Docker container runs on the same docker network, but Server Components 
+  // The frontend Docker container runs on the same docker network, but Server Components
   // might fetch from localhost if using host networking, or `api` if using docker DNS.
-  // Next.js config uses standalone, but since we are just doing a quick fetch, we'll try localhost first.
-  
   try {
-    // Use internal docker DNS for server-side fetches; fallback to localhost for outside-docker dev
     const apiBase = process.env.NEXT_INTERNAL_API_URL || process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-    let res = await fetch(`${apiBase}/api/catalogue/subjects/`, { cache: 'no-store' });
+    const res = await fetch(`${apiBase}/api/catalogue/subjects/`, { cache: 'no-store' });
     if (!res.ok) throw new Error(`Failed to fetch subjects: ${res.status} ${res.statusText}`);
     const data = await res.json();
     // Django REST Framework pagination returns { count, next, previous, results }

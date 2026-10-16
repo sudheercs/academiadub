@@ -1,0 +1,31 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "academiadub-web",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2025-03-01",
+  "compatibility_flags": ["nodejs_compat"],
+
+  // Static assets produced by @opennextjs/cloudflare build
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+
+  // ── Environment variables ─────────────────────────────────────────────────
+  // NEXT_PUBLIC_API_URL must be set here or via Cloudflare dashboard.
+  // Leave NEXT_INTERNAL_API_URL unset — Workers call the public API directly.
+  // Override these per environment using [env.production] blocks below.
+  "vars": {
+    "NEXT_PUBLIC_API_URL": "https://api.academiadub.in"
+  },
+
+  // ── Staging / preview environment ─────────────────────────────────────────
+  "env": {
+    "preview": {
+      "name": "academiadub-web-preview",
+      "vars": {
+        "NEXT_PUBLIC_API_URL": "https://api-staging.academiadub.in"
+      }
+    }
+  }
+}

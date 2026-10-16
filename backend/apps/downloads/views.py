@@ -1,4 +1,5 @@
 import mimetypes
+# pyrefly: ignore [missing-import]
 from django.http import FileResponse, Http404
 from django.utils.encoding import smart_str
 from rest_framework import viewsets, permissions, status
@@ -65,7 +66,11 @@ class DownloadViewSet(viewsets.ReadOnlyModelViewSet):
         filename = smart_str(download.file.name.split("/")[-1])
 
         response = FileResponse(file_handle, content_type=mime)
-        response["Content-Disposition"] = f'attachment; filename="{filename}"'
+        
+        is_download = request.query_params.get("download", "").lower() == "true"
+        disposition = "attachment" if is_download else "inline"
+        response["Content-Disposition"] = f'{disposition}; filename="{filename}"'
+        
         if download.file_size_bytes:
             response["Content-Length"] = download.file_size_bytes
         return response

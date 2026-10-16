@@ -20,7 +20,7 @@ class UserManager(BaseUserManager):
         extra_fields.setdefault("is_staff", True)
         extra_fields.setdefault("is_superuser", True)
         extra_fields.setdefault("status", "active")
-        return self.create_user(email, password, **extra_fields)
+        return self.create_user(email, password=password, **extra_fields)
 
 
 class User(AbstractBaseUser, PermissionsMixin):
@@ -29,11 +29,11 @@ class User(AbstractBaseUser, PermissionsMixin):
     status = models.CharField(
         max_length=20,
         choices=[("active", "Active"), ("suspended", "Suspended"), ("pending", "Pending Verification")],
-        default="pending"
+        default="pending",
     )
     email_verified_at = models.DateTimeField(null=True, blank=True)
     mfa_secret = models.CharField(max_length=255, null=True, blank=True)
-    
+
     is_staff = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(default=timezone.now)
@@ -43,6 +43,22 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = []
+
+    def has_permission(self, permission_key, scope_type=None, scope_id=None):
+        if not self.is_authenticated:
+            return False
+        if self.is_superuser:
+            return True
+        assignments = self.roles.filter(role__permissions__key=permission_key)
+        if scope_type is None:
+            return assignments.filter(scope_type="global").exists()
+        return assignments.filter(
+            models.Q(scope_type="global")
+            | models.Q(scope_type=scope_type, scope_id=str(scope_id))
+        ).exists()
+
+    def has_role(self, role_key):
+        return self.roles.filter(role__key=role_key).exists()
 
     def __str__(self):
         return self.email
@@ -55,13 +71,13 @@ class Profile(models.Model):
     grade_or_year = models.CharField(max_length=50, blank=True)
     locale = models.CharField(max_length=10, default="en")
     guardian_consent = models.BooleanField(default=False)
-    
+
     def __str__(self):
         return self.name
 
 
 class Permission(models.Model):
-    key = models.CharField(max_length=100, unique=True)  # e.g., 'topic:publish', 'user:manage'
+    key = models.CharField(max_length=100, unique=True)
     description = models.CharField(max_length=255)
 
     def __str__(self):
@@ -69,7 +85,7 @@ class Permission(models.Model):
 
 
 class Role(models.Model):
-    key = models.CharField(max_length=50, unique=True)  # e.g., 'student', 'editor', 'admin'
+    key = models.CharField(max_length=50, unique=True)
     name = models.CharField(max_length=100)
     permissions = models.ManyToManyField(Permission, related_name="roles")
 
@@ -81,14 +97,14 @@ class UserRole(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="roles")
     role = models.ForeignKey(Role, on_delete=models.CASCADE)
     scope_type = models.CharField(
-        max_length=50, 
-        choices=[("global", "Global"), ("subject", "Subject"), ("class", "Class")], 
-        default="global"
+        max_length=50,
+        choices=[("global", "Global"), ("subject", "Subject"), ("class", "Class")],
+        default="global",
     )
-    scope_id = models.UUIDField(null=True, blank=True)
-    
+    scope_id = models.CharField(max_length=64, null=True, blank=True)
+
     class Meta:
-        unique_together = ('user', 'role', 'scope_type', 'scope_id')
+        unique_together = ("user", "role", "scope_type", "scope_id")
 
     def __str__(self):
         return f"{self.user.email} - {self.role.key} ({self.scope_type})"

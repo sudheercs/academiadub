@@ -43,12 +43,14 @@ services:
     command: python manage.py runserver 0.0.0.0:8000
     volumes:
       - ../backend:/app          # hot-reload: edits reflect immediately
+      - runner_socket:/run/coderunner
     env_file:
       - ../.env
     environment:
       DJANGO_SETTINGS_MODULE: academiadub.settings.local
       DATABASE_URL: postgres://academiadub:${POSTGRES_PASSWORD:-localpassword}@db:5432/academiadub
       REDIS_URL: redis://redis:6379/0
+      CODE_RUNNER_SOCKET: /run/coderunner/runner.sock
       DEBUG: "true"
     ports:
       - "8000:8000"
@@ -56,6 +58,8 @@ services:
       db:
         condition: service_healthy
       redis:
+        condition: service_healthy
+      coderunner:
         condition: service_healthy
 
   # ── Next.js 14 Frontend ───────────────────────────────────────────────────
@@ -81,7 +85,7 @@ services:
     depends_on:
       - api
 
-  # ── Code Runner (sandboxed stub — hardened in Phase 5) ───────────────────
+  # ── Isolated code runner ───────────────────────────────────────────────────
   coderunner:
     build:
       context: ../coderunner
@@ -90,14 +94,29 @@ services:
     environment:
       MAX_RUNTIME_SECONDS: "5"
       ALLOWED_LANGUAGES: "python,javascript"
-    ports:
-      - "9000:9000"
-    networks:
-      - default
-      - runner_net
-    # Intentionally NO access to db or redis from runner_net
+      CODE_RUNNER_SOCKET: /run/coderunner/runner.sock
+    volumes:
+      - runner_socket:/run/coderunner
+    network_mode: none
+    read_only: true
+    tmpfs:
+      - /tmp:rw,nosuid,nodev,noexec,size=64m,mode=1777
+    cpus: 1.0
+    mem_limit: 512m
+    pids_limit: 64
+    cap_drop:
+      - ALL
+    cap_add:
+      - SETUID
+      - SETGID
+      - CHOWN
+      - DAC_OVERRIDE
+      - DAC_READ_SEARCH
+      - KILL
+    security_opt:
+      - no-new-privileges:true
     healthcheck:
-      test: ["CMD-SHELL", "python3 -c \"import urllib.request; urllib.request.urlopen('http://localhost:9000/health')\""]
+      test: ["CMD", "python3", "-c", "import socket; s=socket.socket(socket.AF_UNIX); s.connect('/run/coderunner/runner.sock'); s.sendall(b'GET /health HTTP/1.0\\r\\nHost: localhost\\r\\n\\r\\n'); assert b'200 OK' in s.recv(1024)"]
       interval: 10s
       timeout: 5s
       retries: 3
@@ -105,10 +124,9 @@ services:
 networks:
   default:
     name: academiadub_default
-  runner_net:
-    name: academiadub_runner
-    internal: true   # no internet access from this network
 
 volumes:
   postgres_data:
     name: academiadub_postgres
+  runner_socket:
+    name: academiadub_runner_socket

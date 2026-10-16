@@ -14,8 +14,8 @@ class EnrollmentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Enrollment
-        fields = ("id", "student", "student_email", "status", "enrolled_at")
-        read_only_fields = ("id", "student", "enrolled_at")
+        fields = ("id", "student", "student_email", "status", "student_secret", "enrolled_at")
+        read_only_fields = ("id", "student", "student_secret", "enrolled_at")
 
 
 class AssignmentSerializer(serializers.ModelSerializer):

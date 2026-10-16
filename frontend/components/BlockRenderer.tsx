@@ -6,7 +6,11 @@ import CodeLab from "./CodeLab";
 
 // Dynamically load Prism for syntax highlighting
 declare global {
-  interface Window { Prism: any; }
+  interface Window {
+    Prism?: {
+      highlightElement: (element: Element) => void;
+    };
+  }
 }
 
 interface Block {
@@ -21,7 +25,13 @@ interface Block {
 
 function MarkdownBlock({ content }: { content: string }) {
   // Simple inline markdown: bold, inline code, line breaks
-  const html = content
+  const escaped = content
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+  const html = escaped
     .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
     .replace(/`(.*?)`/g, "<code>$1</code>")
     .replace(/\n/g, "<br/>");
@@ -36,7 +46,9 @@ function MarkdownBlock({ content }: { content: string }) {
 function CodeBlock({ content, language }: { content: string; language?: string }) {
   const ref = useRef<HTMLElement>(null);
   useEffect(() => {
-    if (ref.current && window.Prism) window.Prism.highlightElement(ref.current);
+    if (ref.current && window.Prism) {
+      window.Prism.highlightElement(ref.current);
+    }
   }, [content]);
 
   return (

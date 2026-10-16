@@ -1,4 +1,4 @@
-.PHONY: dev stop build migrate createsuperuser test-backend lint-backend lint-frontend shell psql logs
+.PHONY: dev stop build migrate createsuperuser test-backend lint-backend lint-frontend shell logs
 
 # ── Local dev ──────────────────────────────────────────────────────────────
 dev:           ## Start all services (builds if needed)
@@ -22,9 +22,6 @@ makemigrations: ## Create new migration files
 
 createsuperuser: ## Create a Django superuser
 	docker compose -f infra/docker-compose.yml exec api python manage.py createsuperuser
-
-psql:          ## Open psql in the db container
-	docker compose -f infra/docker-compose.yml exec db psql -U academiadub
 
 # ── Testing ────────────────────────────────────────────────────────────────
 test-backend:  ## Run backend test suite

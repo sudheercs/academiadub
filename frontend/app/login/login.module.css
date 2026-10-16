@@ -39,6 +39,37 @@
   font-size: 0.9rem;
 }
 
+.tabs {
+  display: flex;
+  margin-bottom: 1.5rem;
+  background: rgba(11, 15, 25, 0.5);
+  border-radius: 8px;
+  padding: 4px;
+}
+
+.tab {
+  flex: 1;
+  background: transparent;
+  border: none;
+  padding: 0.5rem;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+
+.tab:hover {
+  color: #fff;
+}
+
+.activeTab {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
 .form {
   display: flex;
   flex-direction: column;

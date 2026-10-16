@@ -4,7 +4,7 @@ import django
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "academiadub.settings.local")
 django.setup()
 
-from apps.catalogue.models import Subject, Topic, TopicVersion
+from apps.catalogue.models import Subject, Course, Topic, TopicVersion
 from django.contrib.auth import get_user_model
 
 User = get_user_model()
@@ -26,6 +26,28 @@ def seed():
         status="published"
     )
 
+    print("  Creating Courses for Python...")
+    py_fund = Course.objects.create(
+        subject=python,
+        slug="python-fundamentals",
+        title="Python Fundamentals",
+        description="Master variables, collections, loops, and control flow in Python.",
+        icon="🔰",
+        difficulty="beginner",
+        status="published",
+        order=1
+    )
+    py_adv = Course.objects.create(
+        subject=python,
+        slug="python-oop-advanced",
+        title="Object-Oriented & Advanced Python",
+        description="Explore classes, inheritance, decorators, and advanced Python idioms.",
+        icon="⚡",
+        difficulty="intermediate",
+        status="published",
+        order=2
+    )
+
     print("Creating React subject...")
     react = Subject.objects.create(
         slug="react",
@@ -35,6 +57,28 @@ def seed():
         status="published"
     )
     
+    print("  Creating Courses for React...")
+    react_core = Course.objects.create(
+        subject=react,
+        slug="react-core",
+        title="React Core & State Management",
+        description="Deep dive into modern hooks, component lifecycle, and state flow.",
+        icon="⚛️",
+        difficulty="intermediate",
+        status="published",
+        order=1
+    )
+    react_next = Course.objects.create(
+        subject=react,
+        slug="nextjs-fullstack",
+        title="Next.js & Server Components",
+        description="Build fast full-stack applications with the Next.js App Router.",
+        icon="🚀",
+        difficulty="advanced",
+        status="published",
+        order=2
+    )
+
     print("Creating Web Design subject...")
     design = Subject.objects.create(
         slug="design",
@@ -42,6 +86,18 @@ def seed():
         description="Design beautiful, accessible, and engaging user interfaces.",
         icon="🎨",
         status="published"
+    )
+
+    print("  Creating Courses for Web Design...")
+    design_systems = Course.objects.create(
+        subject=design,
+        slug="design-systems",
+        title="Design Systems & Figma",
+        description="Build scalable component libraries and intuitive Figma wireframes.",
+        icon="🎨",
+        difficulty="beginner",
+        status="published",
+        order=1
     )
 
     print("Creating Machine Learning subject (Draft)...")
@@ -52,10 +108,20 @@ def seed():
         icon="🤖",
         status="draft"
     )
+    Course.objects.create(
+        subject=ml,
+        slug="neural-networks-intro",
+        title="Intro to Neural Networks",
+        description="Perceptrons, backpropagation, and foundational deep learning.",
+        icon="🧠",
+        difficulty="advanced",
+        status="draft",
+        order=1
+    )
 
-    print("Creating Topics for Python...")
+    print("Creating Topics for Python Fundamentals...")
     intro = Topic.objects.create(
-        subject=python, slug="variables", title="Variables & Data Types",
+        course=py_fund, slug="variables", title="Variables & Data Types",
         difficulty="beginner", access_level="free", status="published", order=1
     )
     TopicVersion.objects.create(
@@ -73,7 +139,7 @@ def seed():
     intro.save()
     
     lists = Topic.objects.create(
-        subject=python, slug="lists", title="Lists and Loops",
+        course=py_fund, slug="lists", title="Lists and Loops",
         difficulty="beginner", access_level="login", status="published", order=2
     )
     TopicVersion.objects.create(
@@ -86,23 +152,38 @@ def seed():
     lists.current_version_id = 1
     lists.save()
 
-    print("Creating Topics for React...")
+    print("Creating Topics for Advanced Python...")
+    funcs = Topic.objects.create(
+        course=py_adv, slug="functions", title="Functions & Scope",
+        difficulty="intermediate", access_level="free", status="published", order=1
+    )
+    TopicVersion.objects.create(
+        topic=funcs, version_no=1, author=admin, state="published",
+        blocks=[
+            {"type": "markdown", "content": "Functions are reusable blocks of code that take inputs and return outputs."},
+            {"type": "code", "language": "python", "content": "def greet(name: str) -> str:\n    return f'Hello, {name}!'\n\nprint(greet('Developer'))"}
+        ]
+    )
+    funcs.current_version_id = 1
+    funcs.save()
+
+    print("Creating Topics for React Core...")
     hooks = Topic.objects.create(
-        subject=react, slug="hooks", title="React Hooks Deep Dive",
+        course=react_core, slug="hooks", title="React Hooks Deep Dive",
         difficulty="intermediate", access_level="paid", status="published", order=1
     )
     TopicVersion.objects.create(
         topic=hooks, version_no=1, author=admin, state="published",
         blocks=[
-            {"type": "markdown", "content": "Hooks are a new addition in React 16.8. They let you use state and other React features without writing a class."},
-            {"type": "code", "language": "javascript", "content": "import React, { useState, useEffect } from 'react';\n\nfunction Example() {\n  const [count, setCount] = useState(0);\n\n  useEffect(() => {\n    document.title = `You clicked ${count} times`;\n  });\n\n  return (\n    <div>\n      <p>You clicked {count} times</p>\n      <button onClick={() => setCount(count + 1)}>\n        Click me\n      </button>\n    </div>\n  );\n}"},
+            {"type": "markdown", "content": "Hooks are a feature in React that let you use state and lifecycle methods in function components."},
+            {"type": "code", "language": "javascript", "content": "import React, { useState, useEffect } from 'react';\n\nfunction Counter() {\n  const [count, setCount] = useState(0);\n  return <button onClick={() => setCount(c => c + 1)}>Count: {count}</button>;\n}"},
             {"type": "callout", "content": "Rules of Hooks: Only call Hooks at the top level. Only call Hooks from React function components."}
         ]
     )
     hooks.current_version_id = 1
     hooks.save()
 
-    print("Database seeded with rich Catalogue data.")
+    print("Database seeded with rich Catalogue data (Subjects -> Courses -> Topics).")
 
 if __name__ == "__main__":
     seed()

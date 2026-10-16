@@ -1,0 +1,519 @@
+/* ── Quiz Player Styles ─────────────────────────────────────────────────── */
+
+/* Loading / Error */
+.loadingState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 4rem;
+  color: var(--text-muted, #94a3b8);
+}
+
+.spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid rgba(56, 189, 248, 0.2);
+  border-top-color: #38bdf8;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.errorState {
+  padding: 2rem;
+  border-radius: 12px;
+  background: rgba(248, 113, 113, 0.1);
+  border: 1px solid rgba(248, 113, 113, 0.3);
+  color: #f87171;
+  text-align: center;
+  font-size: 0.95rem;
+}
+
+/* ── Intro ────────────────────────────────────────────────────────────────── */
+.intro {
+  text-align: center;
+  padding: 3rem 2rem;
+  animation: fadeUp 0.4s ease-out;
+}
+
+.introIcon { font-size: 3.5rem; margin-bottom: 1rem; display: block; }
+
+.introTitle {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: #f1f5f9;
+  margin-bottom: 0.75rem;
+}
+
+.introDesc {
+  color: var(--text-muted, #94a3b8);
+  font-size: 1rem;
+  max-width: 480px;
+  margin: 0 auto 1.25rem;
+  line-height: 1.6;
+}
+
+.introMeta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  font-size: 0.875rem;
+  color: var(--text-muted, #94a3b8);
+  margin-bottom: 2rem;
+}
+
+.loginNotice {
+  font-size: 0.875rem;
+  color: #fb923c;
+  margin-bottom: 1.5rem;
+}
+
+.introFeatures {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  color: #4ade80;
+  margin-bottom: 1.5rem;
+  background: rgba(74, 222, 128, 0.07);
+  border: 1px solid rgba(74, 222, 128, 0.15);
+  border-radius: 20px;
+  padding: 0.35rem 1rem;
+}
+
+/* ── Resume prompt ───────────────────────────────────────────────────────── */
+.resumePrompt {
+  text-align: center;
+  padding: 3rem 2rem;
+  animation: fadeUp 0.4s ease-out;
+}
+
+.resumeIcon { font-size: 3rem; display: block; margin-bottom: 1rem; }
+
+.resumeTitle {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #f1f5f9;
+  margin-bottom: 0.75rem;
+}
+
+.resumeDesc {
+  color: var(--text-muted, #94a3b8);
+  font-size: 0.95rem;
+  line-height: 1.6;
+  max-width: 420px;
+  margin: 0 auto 2rem;
+}
+
+.resumeDesc strong { color: #e2e8f0; }
+
+.resumeActions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.cancelBtn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #94a3b8;
+  padding: 0.65rem 1.5rem;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.cancelBtn:hover { background: rgba(255,255,255,0.09); color: #e2e8f0; }
+
+.loginNotice a { color: #38bdf8; text-decoration: underline; }
+
+.startBtn {
+  background: #38bdf8;
+  color: #0b0f19;
+  border: none;
+  padding: 0.85rem 2.5rem;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.startBtn:hover {
+  background: #7dd3fc;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(56, 189, 248, 0.3);
+}
+
+/* ── Player ───────────────────────────────────────────────────────────────── */
+.player {
+  animation: fadeUp 0.3s ease-out;
+}
+
+.playerHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.headerRight {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.savedLabel {
+  font-size: 0.75rem;
+  color: #4ade80;
+  opacity: 0.75;
+}
+
+.questionCounter {
+  font-size: 0.875rem;
+  color: var(--text-muted, #94a3b8);
+  font-weight: 500;
+}
+
+.timer {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #4ade80;
+  background: rgba(74, 222, 128, 0.1);
+  border: 1px solid rgba(74, 222, 128, 0.2);
+  padding: 0.2rem 0.6rem;
+  border-radius: 20px;
+}
+
+.timerUrgent {
+  color: #f87171;
+  background: rgba(248, 113, 113, 0.1);
+  border-color: rgba(248, 113, 113, 0.3);
+  animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+.progressBar {
+  height: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 2rem;
+}
+
+.progressFill {
+  height: 100%;
+  background: linear-gradient(90deg, #38bdf8, #818cf8);
+  border-radius: 4px;
+  transition: width 0.4s ease;
+}
+
+.questionCard {
+  background: rgba(30, 41, 59, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 2rem;
+  margin-bottom: 1.5rem;
+}
+
+.questionText {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #f1f5f9;
+  line-height: 1.6;
+  margin-bottom: 0.5rem;
+}
+
+.multiHint {
+  font-size: 0.8rem;
+  color: #818cf8;
+  margin-bottom: 1.25rem;
+  font-style: italic;
+}
+
+.choiceList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.choiceBtn {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.85rem 1.1rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  color: #e2e8f0;
+  font-size: 0.95rem;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.15s;
+  width: 100%;
+}
+
+.choiceBtn:hover {
+  background: rgba(56, 189, 248, 0.06);
+  border-color: rgba(56, 189, 248, 0.25);
+}
+
+.choiceSelected {
+  background: rgba(56, 189, 248, 0.12) !important;
+  border-color: rgba(56, 189, 248, 0.5) !important;
+  color: #e0f2fe;
+}
+
+.choiceMark {
+  font-size: 1.1rem;
+  flex-shrink: 0;
+  color: #38bdf8;
+}
+
+/* Navigation */
+.nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.navBtn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #e2e8f0;
+  padding: 0.65rem 1.25rem;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.navBtn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.navBtn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+.answered {
+  font-size: 0.8rem;
+  color: var(--text-muted, #94a3b8);
+}
+
+/* ── Action bar (always-visible bottom bar while playing) ──────────────── */
+.actionBar {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  justify-content: flex-end;
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.saveExitBtn {
+  background: rgba(56, 189, 248, 0.1);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  color: #38bdf8;
+  padding: 0.65rem 1.25rem;
+  border-radius: 10px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.saveExitBtn:hover {
+  background: rgba(56, 189, 248, 0.18);
+}
+
+.submitBtn {
+  background: #4ade80;
+  color: #0b0f19;
+  border: none;
+  padding: 0.65rem 1.5rem;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.submitBtn:hover:not(:disabled) {
+  background: #86efac;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(74, 222, 128, 0.3);
+}
+
+.submitBtn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* ── Result ───────────────────────────────────────────────────────────────── */
+.result {
+  animation: fadeUp 0.4s ease-out;
+}
+
+.scoreBadge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2.5rem;
+  border-radius: 20px;
+  margin-bottom: 2rem;
+  border: 1px solid;
+}
+
+.pass {
+  background: rgba(74, 222, 128, 0.08);
+  border-color: rgba(74, 222, 128, 0.25);
+}
+
+.fail {
+  background: rgba(248, 113, 113, 0.08);
+  border-color: rgba(248, 113, 113, 0.25);
+}
+
+.scoreValue {
+  font-size: 3.5rem;
+  font-weight: 900;
+  background: linear-gradient(135deg, #38bdf8, #818cf8);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  line-height: 1;
+}
+
+.scoreLabel {
+  margin-top: 0.5rem;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #f1f5f9;
+}
+
+.durationLabel {
+  font-size: 0.8rem;
+  color: var(--text-muted, #94a3b8);
+  margin-top: 0.25rem;
+}
+
+.reviewTitle {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #e2e8f0;
+  margin-bottom: 1rem;
+}
+
+.reviewList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.reviewItem {
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+  border: 1px solid;
+}
+
+.reviewCorrect {
+  background: rgba(74, 222, 128, 0.05);
+  border-color: rgba(74, 222, 128, 0.2);
+}
+
+.reviewWrong {
+  background: rgba(248, 113, 113, 0.05);
+  border-color: rgba(248, 113, 113, 0.2);
+}
+
+.reviewSkipped {
+  background: rgba(148, 163, 184, 0.04);
+  border-color: rgba(148, 163, 184, 0.15);
+}
+
+.skippedNote {
+  font-size: 0.78rem;
+  color: #64748b;
+  font-style: italic;
+  margin-top: 0.4rem;
+}
+
+.reviewQ {
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-start;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #f1f5f9;
+  margin-bottom: 0.75rem;
+}
+
+.reviewNum { color: var(--text-muted, #94a3b8); flex-shrink: 0; }
+
+.reviewIcon {
+  margin-left: auto;
+  flex-shrink: 0;
+  font-weight: 700;
+  color: inherit;
+}
+
+.reviewChoices {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.85rem;
+}
+
+.reviewChoice {
+  color: var(--text-muted, #94a3b8);
+  padding: 0.2rem 0;
+  white-space: pre-wrap;
+}
+
+.correctChoice { color: #4ade80; font-weight: 500; }
+.wrongChoice { color: #f87171; text-decoration: line-through; }
+
+.explanation {
+  margin-top: 0.75rem;
+  font-size: 0.85rem;
+  color: #94a3b8;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+  padding: 0.6rem 0.8rem;
+  line-height: 1.5;
+}
+
+.resultActions {
+  margin-top: 2rem;
+  display: flex;
+  justify-content: center;
+}
+
+.retryBtn {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #e2e8f0;
+  padding: 0.75rem 2rem;
+  border-radius: 12px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.retryBtn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}

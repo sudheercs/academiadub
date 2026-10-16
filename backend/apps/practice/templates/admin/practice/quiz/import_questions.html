@@ -1,0 +1,302 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block title %}Import Questions via CSV — {{ quiz.title }}{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+  <a href="{% url 'admin:index' %}">Home</a>
+  &rsaquo; <a href="{% url 'admin:practice_quiz_changelist' %}">Quizzes</a>
+  &rsaquo; <a href="{% url 'admin:practice_quiz_change' quiz.pk %}">{{ quiz.title }}</a>
+  &rsaquo; Import Questions
+</div>
+{% endblock %}
+
+{% block content %}
+<style>
+  /* ── Page chrome ─────────────────────────────────────────────────────── */
+  .import-wrap      { max-width: 860px; }
+  .import-hero      { display:flex; align-items:flex-start; gap:1rem; margin-bottom:1.5rem; }
+  .import-icon      { font-size:2.2rem; line-height:1; flex-shrink:0; }
+  .import-hero h1   { font-size:1.5rem; font-weight:700; margin:0 0 .35rem; color:#1a202c; }
+  .import-hero p    { margin:0; color:#4a5568; font-size:.9rem; line-height:1.5; }
+
+  /* ── Panels ──────────────────────────────────────────────────────────── */
+  .panel {
+    background:#fff; border:1px solid #e2e8f0; border-radius:10px;
+    padding:1.4rem 1.6rem; margin-bottom:1.5rem;
+  }
+  .panel-title { font-size:.95rem; font-weight:700; color:#2d3748; margin:0 0 1rem; }
+
+  /* ── Column reference table ──────────────────────────────────────────── */
+  .ref-table { width:100%; border-collapse:collapse; font-size:.83rem; }
+  .ref-table th {
+    text-align:left; padding:.45rem .65rem; background:#f7fafc;
+    border-bottom:2px solid #e2e8f0; color:#4a5568; font-weight:600; white-space:nowrap;
+  }
+  .ref-table td { padding:.45rem .65rem; border-bottom:1px solid #edf2f7; color:#2d3748; vertical-align:top; }
+  .ref-table tr:last-child td { border-bottom:none; }
+  code.col { background:#ebf8ff; color:#2b6cb0; padding:.1rem .35rem; border-radius:3px; font-family:monospace; font-size:.8rem; }
+  .req-y { color:#276749; font-weight:700; }
+  .req-n { color:#a0aec0; }
+  .eg    { font-style:italic; color:#718096; font-size:.8rem; }
+
+  /* ── Upload form ─────────────────────────────────────────────────────── */
+  .form-row-custom { display:flex; align-items:center; gap:1rem; flex-wrap:wrap; margin-bottom:.75rem; }
+  .file-label {
+    display:inline-flex; align-items:center; gap:.5rem;
+    background:#edf2f7; border:1px solid #cbd5e0; border-radius:6px;
+    padding:.55rem 1.1rem; cursor:pointer; font-size:.88rem; font-weight:600;
+    color:#2d3748; transition:background .15s;
+  }
+  .file-label:hover { background:#e2e8f0; }
+  #csv-file-input { display:none; }
+  #file-name-display { font-size:.85rem; color:#4a5568; }
+
+  .submit-row-custom { display:flex; gap:.75rem; align-items:center; flex-wrap:wrap; margin-top:1rem; }
+  .btn-import {
+    background:#3182ce; color:#fff; border:none; border-radius:6px;
+    padding:.65rem 1.5rem; font-size:.9rem; font-weight:700; cursor:pointer; transition:background .15s;
+  }
+  .btn-import:hover  { background:#2b6cb0; }
+  .btn-import:disabled { background:#a0aec0; cursor:not-allowed; }
+
+  .btn-sample {
+    display:inline-flex; align-items:center; gap:.4rem;
+    background:#fff; border:1px solid #3182ce; color:#3182ce; border-radius:6px;
+    padding:.6rem 1.2rem; font-size:.88rem; font-weight:700;
+    text-decoration:none; transition:all .15s;
+  }
+  .btn-sample:hover { background:#ebf8ff; }
+
+  .btn-back {
+    background:#fff; border:1px solid #cbd5e0; color:#4a5568; border-radius:6px;
+    padding:.6rem 1.2rem; font-size:.88rem; font-weight:600;
+    text-decoration:none; transition:all .15s;
+  }
+  .btn-back:hover { background:#f7fafc; }
+
+  /* ── Drop zone ───────────────────────────────────────────────────────── */
+  .drop-zone {
+    border:2px dashed #cbd5e0; border-radius:8px; padding:2rem 1.5rem;
+    text-align:center; color:#a0aec0; cursor:pointer; transition:all .2s;
+    margin-bottom:1rem; font-size:.9rem;
+  }
+  .drop-zone.drag-over { border-color:#3182ce; background:#ebf8ff; color:#2b6cb0; }
+  .drop-zone.has-file  { border-color:#38a169; background:#f0fff4; color:#276749; }
+  .drop-zone strong    { display:block; font-size:1rem; margin-bottom:.25rem; }
+
+  /* ── Results ─────────────────────────────────────────────────────────── */
+  .result-box { border-radius:8px; padding:1.2rem 1.4rem; margin-top:1.25rem; display:none; }
+  .result-box.success { background:#f0fff4; border:1px solid #9ae6b4; }
+  .result-box.error   { background:#fff5f5; border:1px solid #feb2b2; }
+  .result-box h3 { margin:0 0 .75rem; font-size:.95rem; }
+  .result-box.success h3 { color:#276749; }
+  .result-box.error   h3 { color:#9b2c2c; }
+  .stats-grid {
+    display:grid; grid-template-columns:repeat(auto-fit, minmax(120px, 1fr));
+    gap:.75rem; margin-bottom:1rem;
+  }
+  .stat-card {
+    background:#fff; border:1px solid #c6f6d5; border-radius:6px;
+    padding:.75rem; text-align:center;
+  }
+  .stat-val   { display:block; font-size:1.8rem; font-weight:900; color:#276749; line-height:1; }
+  .stat-label { display:block; font-size:.78rem; color:#4a5568; margin-top:.2rem; }
+  .note-box   { background:#fffbeb; border:1px solid #fbd38d; border-radius:6px; padding:.7rem .9rem; font-size:.83rem; color:#744210; margin-top:.75rem; }
+  .err-list   { margin:.5rem 0 0; padding-left:1.2rem; font-size:.82rem; color:#9b2c2c; }
+  .err-list li { margin-bottom:.2rem; }
+
+  /* ── Spinner ─────────────────────────────────────────────────────────── */
+  .spinner { display:none; width:18px; height:18px; border:2px solid rgba(255,255,255,.3); border-top-color:#fff; border-radius:50%; animation:spin .7s linear infinite; vertical-align:middle; margin-right:.4rem; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+</style>
+
+<div class="import-wrap">
+
+  <!-- Hero -->
+  <div class="import-hero">
+    <span class="import-icon">📥</span>
+    <div>
+      <h1>Import Questions — <em>{{ quiz.title }}</em></h1>
+      <p>
+        Upload a CSV file to bulk-create all questions and choices for this quiz at once.<br>
+        The quiz already exists — your CSV only needs <strong>question-level columns</strong>.
+      </p>
+    </div>
+  </div>
+
+  <!-- Column reference -->
+  <div class="panel">
+    <p class="panel-title">📋 CSV Column Reference</p>
+    <table class="ref-table">
+      <thead>
+        <tr><th>Column</th><th>Required</th><th>Description</th><th>Example</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code class="col">question_text</code></td>
+          <td class="req-y">✅ Yes</td>
+          <td>The question (Markdown supported)</td>
+          <td class="eg">What does len([]) return?</td>
+        </tr>
+        <tr>
+          <td><code class="col">question_type</code></td>
+          <td class="req-n">— No</td>
+          <td><code class="col">mcq</code> (single answer) or <code class="col">multi</code> (multiple). Default: <code class="col">mcq</code></td>
+          <td class="eg">mcq</td>
+        </tr>
+        <tr>
+          <td><code class="col">choice_1 … choice_4</code></td>
+          <td class="req-y">✅ Min 2</td>
+          <td>Answer choice text. Columns choice_1 through choice_4 supported.</td>
+          <td class="eg">0</td>
+        </tr>
+        <tr>
+          <td><code class="col">correct_choices</code></td>
+          <td class="req-y">✅ Yes</td>
+          <td>1-based index(es) of correct choice(s). Comma-separated for <code class="col">multi</code>.</td>
+          <td class="eg">1 &nbsp;or&nbsp; 1,3</td>
+        </tr>
+        <tr>
+          <td><code class="col">explanation</code></td>
+          <td class="req-n">— No</td>
+          <td>Shown to the student after answering.</td>
+          <td class="eg">len() returns the number of items.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Upload form -->
+  <div class="panel">
+    <p class="panel-title">📤 Upload Questions CSV</p>
+
+    <!-- Drop zone -->
+    <div class="drop-zone" id="drop-zone">
+      <strong id="dz-title">Drag & drop your .csv file here</strong>
+      or click <strong>Choose File</strong> below
+    </div>
+
+    <form id="import-form" method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+      <div class="form-row-custom">
+        <label class="file-label" for="csv-file-input">
+          📂 Choose File
+        </label>
+        <input type="file" name="file" id="csv-file-input" accept=".csv" required>
+        <span id="file-name-display">No file chosen</span>
+      </div>
+
+      <div class="submit-row-custom">
+        <button type="submit" class="btn-import" id="import-btn">
+          <span class="spinner" id="spinner"></span>
+          <span id="btn-label">📤 Import Questions</span>
+        </button>
+        <a href="{% url 'admin:practice_quiz_import_questions' quiz.pk %}?sample=1" class="btn-sample">
+          ⬇ Download Sample CSV
+        </a>
+        <a href="{% url 'admin:practice_quiz_change' quiz.pk %}" class="btn-back">
+          ← Back to Quiz
+        </a>
+      </div>
+    </form>
+
+    <!-- Results injected here by JS -->
+    <div class="result-box" id="result-box"></div>
+  </div>
+
+</div>
+
+<script>
+(function() {
+  const dropZone    = document.getElementById('drop-zone');
+  const fileInput   = document.getElementById('csv-file-input');
+  const fileDisplay = document.getElementById('file-name-display');
+  const form        = document.getElementById('import-form');
+  const importBtn   = document.getElementById('import-btn');
+  const spinner     = document.getElementById('spinner');
+  const btnLabel    = document.getElementById('btn-label');
+  const resultBox   = document.getElementById('result-box');
+  const dzTitle     = document.getElementById('dz-title');
+
+  // ── File selection display ────────────────────────────────────────────
+  fileInput.addEventListener('change', () => {
+    if (fileInput.files.length) {
+      const f = fileInput.files[0];
+      fileDisplay.textContent = f.name + ' (' + (f.size / 1024).toFixed(1) + ' KB)';
+      dropZone.classList.remove('drag-over');
+      dropZone.classList.add('has-file');
+      dzTitle.textContent = '✓ ' + f.name;
+    }
+  });
+
+  // ── Drop zone ─────────────────────────────────────────────────────────
+  dropZone.addEventListener('click', () => fileInput.click());
+  dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+  dropZone.addEventListener('drop', e => {
+    e.preventDefault();
+    const file = e.dataTransfer.files[0];
+    if (file && file.name.endsWith('.csv')) {
+      // Transfer to input
+      const dt = new DataTransfer();
+      dt.items.add(file);
+      fileInput.files = dt.files;
+      fileDisplay.textContent = file.name + ' (' + (file.size / 1024).toFixed(1) + ' KB)';
+      dropZone.classList.remove('drag-over');
+      dropZone.classList.add('has-file');
+      dzTitle.textContent = '✓ ' + file.name;
+    } else {
+      alert('Please drop a .csv file.');
+    }
+  });
+
+  // ── AJAX form submit ──────────────────────────────────────────────────
+  form.addEventListener('submit', async e => {
+    e.preventDefault();
+    if (!fileInput.files.length) { alert('Please choose a CSV file first.'); return; }
+
+    importBtn.disabled = true;
+    spinner.style.display = 'inline-block';
+    btnLabel.textContent = 'Importing…';
+    resultBox.style.display = 'none';
+
+    const formData = new FormData(form);
+    try {
+      const res = await fetch(form.action || window.location.href, {
+        method: 'POST',
+        body: formData,
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+      });
+      const data = await res.json();
+
+      if (res.ok) {
+        resultBox.className = 'result-box success';
+        resultBox.innerHTML = `
+          <h3>✅ Import Complete!</h3>
+          <div class="stats-grid">
+            <div class="stat-card"><span class="stat-val">${data.questions_created}</span><span class="stat-label">Questions Imported</span></div>
+            <div class="stat-card"><span class="stat-val">${data.choices_created}</span><span class="stat-label">Choices Created</span></div>
+            <div class="stat-card"><span class="stat-val">${data.row_errors.length}</span><span class="stat-label">Row Errors</span></div>
+          </div>
+          ${data.note ? `<div class="note-box">ℹ️ ${data.note}</div>` : ''}
+          ${data.row_errors.length ? `<ul class="err-list">${data.row_errors.map(e => `<li>${e}</li>`).join('')}</ul>` : ''}
+        `;
+      } else {
+        resultBox.className = 'result-box error';
+        resultBox.innerHTML = `<h3>❌ Import Failed</h3><p>${data.error || JSON.stringify(data)}</p>`;
+      }
+    } catch (err) {
+      resultBox.className = 'result-box error';
+      resultBox.innerHTML = `<h3>❌ Network Error</h3><p>${err.message}</p>`;
+    } finally {
+      resultBox.style.display = 'block';
+      importBtn.disabled = false;
+      spinner.style.display = 'none';
+      btnLabel.textContent = '📤 Import Questions';
+    }
+  });
+})();
+</script>
+{% endblock %}

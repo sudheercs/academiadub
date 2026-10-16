@@ -12,7 +12,7 @@
 |---|---|
 | Backend API | Django REST Framework (Python 3.12) |
 | Frontend | Next.js 14 (TypeScript) |
-| Database | PostgreSQL 16 |
+| Database | MySQL 8.0.11+ (server-hosted) |
 | Cache / Sessions | Redis 7 |
 | Object Storage | AWS S3 (ap-south-1) |
 | Email | AWS SES |
@@ -35,7 +35,13 @@ git clone https://github.com/your-org/academiadub.git
 cd academiadub
 cp .env.example .env
 # Edit .env and set SECRET_KEY to a random 50+ character string
+# Set DATABASE_URL to your MySQL server credentials
 ```
+
+The API requires a MySQL `DATABASE_URL` in `.env`; SQLite and a local database
+container are not used. URL-encode special characters in the username or
+password, and ensure the MySQL server permits connections from your host.
+Keep `.env` private and never commit credentials.
 
 ### 2. Start all services
 
@@ -50,9 +56,14 @@ make dev
 | Django API | http://localhost:8000 |
 | API health check | http://localhost:8000/api/health/ |
 | Django admin | http://localhost:8000/admin/ |
-| PostgreSQL | localhost:5432 |
 | Redis | localhost:6379 |
-| Code runner | http://localhost:9000/health |
+| Code execution | Through the API at http://localhost:8000/api/codelab/run/ (runner is private) |
+
+Browser login uses HttpOnly access and refresh cookies. For production deployments
+where the frontend and API use separate subdomains, set `AUTH_COOKIE_DOMAIN` to
+their shared parent domain (for example, `.academiadub.in`) and configure
+`CORS_ALLOWED_ORIGINS` and `CSRF_TRUSTED_ORIGINS` for the frontend URL. Leave
+the cookie domain blank for local development.
 
 ### 3. Create a superuser
 
@@ -72,7 +83,6 @@ make makemigrations   # Create new migrations
 make test-backend     # Run Django test suite
 make lint             # Lint backend + frontend
 make shell            # Django shell
-make psql             # psql in the db container
 make logs             # Follow all container logs
 make help             # Show all commands
 ```
@@ -90,7 +100,7 @@ academiadub/
 │   ├── app/          # App Router pages
 │   ├── components/   # Shared UI components
 │   └── design-system/# CSS tokens and base components
-├── coderunner/       # Sandboxed code execution service (stub in Phase 0)
+├── coderunner/       # Isolated Python/JavaScript execution service
 ├── infra/            # Docker Compose, AWS task definitions
 ├── docs/             # Threat model, ADRs, runbooks
 └── .github/workflows/# CI and deploy pipelines

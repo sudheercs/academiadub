@@ -34,6 +34,23 @@ class Download(models.Model):
     class Meta:
         ordering = ["created_at"]
 
+    def save(self, *args, **kwargs):
+        if self.file:
+            self.file_size_bytes = self.file.size
+            import mimetypes
+            
+            # Register common Office mimetypes that might be missing on some systems
+            mimetypes.add_type('application/vnd.openxmlformats-officedocument.presentationml.presentation', '.pptx')
+            mimetypes.add_type('application/vnd.openxmlformats-officedocument.wordprocessingml.document', '.docx')
+            mimetypes.add_type('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', '.xlsx')
+            
+            mime_type, _ = mimetypes.guess_type(self.file.name)
+            if mime_type:
+                self.mime_type = mime_type
+            else:
+                self.mime_type = 'application/octet-stream' # Fallback
+        super().save(*args, **kwargs)
+
     def __str__(self):
         return f"{self.title} [{self.topic.title}]"
 

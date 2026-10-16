@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { cookies } from "next/headers";
 import BlockRenderer from "@/components/BlockRenderer";
 import styles from "./topic.module.css";
 
@@ -19,6 +20,7 @@ interface Topic {
   access_gated: boolean;
   content: Block[];
   subject: { slug: string; name: string; icon: string };
+  course?: { id: number; slug: string; title: string; icon?: string };
 }
 
 interface Download {
@@ -30,12 +32,24 @@ interface Download {
   mime_type: string;
 }
 
-async function getTopic(subjectSlug: string, topicSlug: string): Promise<Topic | null> {
+interface QuizStub {
+  id: string;
+  title: string;
+  description: string;
+  pass_mark: number;
+  time_limit_minutes: number | null;
+  question_count: number;
+}
+
+async function getTopic(subjectSlug: string, topicSlug: string, token: string | undefined): Promise<Topic | null> {
   const apiBase = process.env.NEXT_INTERNAL_API_URL || "http://localhost:8000";
   try {
     const listRes = await fetch(
       `${apiBase}/api/catalogue/topics/?subject=${subjectSlug}`,
-      { cache: "no-store" }
+      {
+        cache: "no-store",
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      }
     );
     const listData = await listRes.json();
     const topics = listData.results || listData;
@@ -44,7 +58,10 @@ async function getTopic(subjectSlug: string, topicSlug: string): Promise<Topic |
 
     const detailRes = await fetch(
       `${apiBase}/api/catalogue/topics/${stub.id}/`,
-      { cache: "no-store" }
+      {
+        cache: "no-store",
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      }
     );
     if (!detailRes.ok) return null;
     return await detailRes.json();
@@ -53,10 +70,27 @@ async function getTopic(subjectSlug: string, topicSlug: string): Promise<Topic |
   }
 }
 
-async function getDownloads(topicId: number): Promise<Download[]> {
+async function getDownloads(topicId: number, token: string | undefined): Promise<Download[]> {
   const apiBase = process.env.NEXT_INTERNAL_API_URL || "http://localhost:8000";
   try {
-    const res = await fetch(`${apiBase}/api/downloads/files/?topic=${topicId}`, { cache: "no-store" });
+    const res = await fetch(`${apiBase}/api/downloads/files/?topic=${topicId}`, {
+      cache: "no-store",
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+    const data = await res.json();
+    return data.results || data;
+  } catch {
+    return [];
+  }
+}
+
+async function getQuizzes(topicId: number, token: string | undefined): Promise<QuizStub[]> {
+  const apiBase = process.env.NEXT_INTERNAL_API_URL || "http://localhost:8000";
+  try {
+    const res = await fetch(`${apiBase}/api/practice/quizzes/?topic=${topicId}`, {
+      cache: "no-store",
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
     const data = await res.json();
     return data.results || data;
   } catch {
@@ -100,16 +134,19 @@ function AccessGate({ level }: { level: string }) {
 export default async function TopicPage({
   params,
 }: {
-  params: { slug: string; topicSlug: string };
+  params: Promise<{ slug: string; topicSlug: string }>;
 }) {
-  const topic = await getTopic(params.slug, params.topicSlug);
-  const downloads = topic && !topic.access_gated ? await getDownloads(topic.id) : [];
+  const { slug, topicSlug } = await params;
+  const token = (await cookies()).get("access_token")?.value;
+  const topic = await getTopic(slug, topicSlug, token);
+  const downloads = topic && !topic.access_gated ? await getDownloads(topic.id, token) : [];
+  const quizzes = topic && !topic.access_gated ? await getQuizzes(topic.id, token) : [];
 
   if (!topic)
     return (
       <div className={styles.notFound}>
         <p>Topic not found or not yet published.</p>
-        <Link href={`/subjects/${params.slug}`} className={styles.backLink}>
+        <Link href={`/subjects/${slug}`} className={styles.backLink}>
           ← Back
         </Link>
       </div>
@@ -121,7 +158,13 @@ export default async function TopicPage({
       <nav className={styles.breadcrumb}>
         <Link href="/">Catalogue</Link>
         <span>/</span>
-        <Link href={`/subjects/${params.slug}`}>{topic.subject.name}</Link>
+        <Link href={`/subjects/${slug}`}>{topic.subject?.name || "Subject"}</Link>
+        {topic.course && (
+          <>
+            <span>/</span>
+            <span>{topic.course.title}</span>
+          </>
+        )}
         <span>/</span>
         <span>{topic.title}</span>
       </nav>
@@ -157,6 +200,33 @@ export default async function TopicPage({
             <BlockRenderer blocks={topic.content} />
           </article>
 
+          {/* Quizzes Section */}
+          {quizzes.length > 0 && (
+            <div className={styles.downloads}>
+              <h3 className={styles.downloadsTitle}>🧠 Practice Quizzes</h3>
+              <ul className={styles.downloadList}>
+                {quizzes.map((q) => (
+                  <li key={q.id} className={styles.downloadItem}>
+                    <a
+                      href={`/subjects/${slug}/${topicSlug}/quiz/${q.id}`}
+                      className={styles.downloadLink}
+                    >
+                      <span className={styles.downloadIcon}>📝</span>
+                      <div className={styles.downloadInfo}>
+                        <strong>{q.title}</strong>
+                        {q.description && <p>{q.description}</p>}
+                      </div>
+                      <span className={styles.downloadSize}>
+                        {q.question_count}Q · {q.pass_mark}% pass
+                        {q.time_limit_minutes ? ` · ${q.time_limit_minutes}min` : ""}
+                      </span>
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
           {/* Downloads Section */}
           {downloads.length > 0 && (
             <div className={styles.downloads}>
@@ -165,7 +235,7 @@ export default async function TopicPage({
                 {downloads.map((d) => (
                   <li key={d.id} className={styles.downloadItem}>
                     <a
-                      href={`http://localhost:8000/api/downloads/files/${d.id}/serve/`}
+                      href={`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/downloads/files/${d.id}/serve/`}
                       className={styles.downloadLink}
                       target="_blank"
                       rel="noopener noreferrer"
@@ -191,7 +261,7 @@ export default async function TopicPage({
 
       {/* Footer nav */}
       <div className={styles.footer}>
-        <Link href={`/subjects/${params.slug}`} className={styles.backLink}>
+        <Link href={`/subjects/${slug}`} className={styles.backLink}>
           ← Back to {topic.subject.name}
         </Link>
       </div>

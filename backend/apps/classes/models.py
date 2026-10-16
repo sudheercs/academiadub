@@ -1,13 +1,27 @@
 import uuid
+import secrets
+import string
 from django.db import models
 from django.conf import settings
 from apps.catalogue.models import Topic
+
+
+def _generate_join_code(length=8):
+    """Uppercase alphanumeric code, unambiguous chars."""
+    alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
+    return "".join(secrets.choice(alphabet) for _ in range(length))
+
+
+def _generate_student_secret(length=6):
+    """Short numeric PIN for students."""
+    return "".join(secrets.choice(string.digits) for _ in range(length))
 
 
 class Classroom(models.Model):
     """
     A class cohort owned by an instructor.
     Students join via a unique join_code.
+    join_code is auto-generated on first save but can be overridden/regenerated in admin.
     """
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=200)
@@ -17,7 +31,7 @@ class Classroom(models.Model):
         on_delete=models.CASCADE,
         related_name="taught_classes",
     )
-    join_code = models.CharField(max_length=12, unique=True, db_index=True)
+    join_code = models.CharField(max_length=12, unique=True, db_index=True, blank=True)
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -25,12 +39,21 @@ class Classroom(models.Model):
     class Meta:
         ordering = ["-created_at"]
 
+    def save(self, *args, **kwargs):
+        if not self.join_code:
+            # Keep generating until we get a unique code
+            code = _generate_join_code()
+            while Classroom.objects.filter(join_code=code).exists():
+                code = _generate_join_code()
+            self.join_code = code
+        super().save(*args, **kwargs)
+
     def __str__(self):
         return f"{self.name} (by {self.instructor.email})"
 
 
 class Enrollment(models.Model):
-    """A student's membership in a class."""
+    """A student's membership in a class, with a personal secret for code-based login."""
     STATUS_CHOICES = [
         ("active", "Active"),
         ("dropped", "Dropped"),
@@ -44,10 +67,22 @@ class Enrollment(models.Model):
     )
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="active")
     enrolled_at = models.DateTimeField(auto_now_add=True)
+    # Personal secret code issued to this student for this class.
+    # Login: class_code + student_secret → JWT
+    student_secret = models.CharField(max_length=8, blank=True)
 
     class Meta:
         unique_together = ("classroom", "student")
         ordering = ["enrolled_at"]
+
+    def save(self, *args, **kwargs):
+        if not self.student_secret:
+            self.student_secret = _generate_student_secret()
+        super().save(*args, **kwargs)
+
+    def regenerate_secret(self):
+        self.student_secret = _generate_student_secret()
+        self.save(update_fields=["student_secret"])
 
     def __str__(self):
         return f"{self.student.email} in {self.classroom.name}"

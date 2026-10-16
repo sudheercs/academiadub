@@ -29,7 +29,7 @@ urlpatterns = [
     path("api/downloads/", include("apps.downloads.urls")),
 
     # Phase 5 — Practice & Code Lab
-    # path("api/practice/", include("apps.practice.urls")),
+    path("api/practice/", include("apps.practice.urls")),
     path("api/codelab/", include("apps.codelab.urls")),
 
     # Phase 6 — Classes
