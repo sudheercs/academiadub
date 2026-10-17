@@ -18,8 +18,8 @@ services:
     buildCommand: |
       pip install -r requirements.txt
       python manage.py collectstatic --noinput
-    preDeployCommand: python manage.py migrate --noinput
     startCommand: |
+      python manage.py migrate --noinput && \
       gunicorn academiadub.wsgi:application \
         --bind 0.0.0.0:$PORT \
         --workers 2 \
