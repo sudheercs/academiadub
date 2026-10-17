@@ -1,0 +1,90 @@
+# Render Blueprint — academiadub backend
+# Docs: https://render.com/docs/blueprint-spec
+#
+# Deploy instructions:
+#   1. Connect this repo to Render (New > Blueprint)
+#   2. Render reads this file and creates all services automatically
+#   3. Set the environment variables marked with `generateValue: true`
+#      or fill in your real values in the Render dashboard
+
+services:
+  # ── Django API (Web Service) ────────────────────────────────────────────────
+  - type: web
+    name: academiadub-api
+    runtime: python
+    region: singapore        # Change to the region closest to your users
+    plan: free               # Upgrade to starter ($7/mo) for no sleep + SSD
+    rootDir: backend
+    buildCommand: |
+      pip install -r requirements.txt
+      python manage.py collectstatic --noinput
+    preDeployCommand: python manage.py migrate --noinput
+    startCommand: |
+      gunicorn academiadub.wsgi:application \
+        --bind 0.0.0.0:$PORT \
+        --workers 2 \
+        --timeout 60 \
+        --access-logfile -
+    healthCheckPath: /api/health/
+    autoDeploy: true         # Redeploys automatically on every push to main
+
+    envVars:
+      - key: DJANGO_SETTINGS_MODULE
+        value: academiadub.settings.production
+
+      - key: PYTHON_VERSION
+        value: "3.12"
+
+      - key: SECRET_KEY
+        generateValue: true  # Render generates a secure random value
+
+      - key: DEBUG
+        value: "false"
+
+      # ── Supabase PostgreSQL ──────────────────────────────────────────────────
+      # Paste your Supabase connection string (Transaction Pooler, port 6543)
+      # from: Supabase Dashboard → Project Settings → Database → Connection string
+      # Format: postgresql://postgres.[project-ref]:[password]@aws-0-ap-south-1.pooler.supabase.com:6543/postgres
+      - key: DATABASE_URL
+        sync: false          # Fill in via dashboard — never commit real credentials
+
+      # ── Redis ────────────────────────────────────────────────────────────────
+      # Option A: Use Render's managed Redis (add a Redis service below)
+      # Option B: Use Upstash Redis free tier — paste the URL here
+      - key: REDIS_URL
+        sync: false
+
+      # ── Allowed hosts & CORS ─────────────────────────────────────────────────
+      - key: ALLOWED_HOSTS
+        value: "academiadub-api.onrender.com"
+
+      - key: CORS_ALLOWED_ORIGINS
+        # Add your Cloudflare Workers URL here once you have it
+        value: "https://academiadub-web.workers.dev"
+
+      - key: CSRF_TRUSTED_ORIGINS
+        value: "https://academiadub-web.workers.dev,https://academiadub-api.onrender.com"
+
+      - key: AUTH_COOKIE_DOMAIN
+        value: ".workers.dev"
+
+      # ── Email (SMTP) ─────────────────────────────────────────────────────────
+      # Use Resend (free 3k emails/mo) or Brevo (free 300/day)
+      - key: EMAIL_HOST
+        sync: false          # e.g. smtp.resend.com
+
+      - key: EMAIL_HOST_USER
+        sync: false
+
+      - key: EMAIL_HOST_PASSWORD
+        sync: false
+
+      - key: DEFAULT_FROM_EMAIL
+        value: "noreply@academiadub.in"
+
+      # ── Code runner (disabled on Render — runs in Docker locally) ────────────
+      - key: ENABLE_CODE_LAB
+        value: "false"
+
+      - key: ENABLE_PAYMENTS
+        value: "false"

@@ -14,16 +14,15 @@ jobs:
     runs-on: ubuntu-latest
 
     services:
-      mysql:
-        image: mysql:8.4
+      postgres:
+        image: postgres:16-alpine
         env:
-          MYSQL_DATABASE: test_academiadub
-          MYSQL_USER: academiadub
-          MYSQL_PASSWORD: testpassword
-          MYSQL_ROOT_PASSWORD: rootpassword
-        ports: ["3306:3306"]
+          POSTGRES_DB: test_academiadub
+          POSTGRES_USER: academiadub
+          POSTGRES_PASSWORD: testpassword
+        ports: ["5432:5432"]
         options: >-
-          --health-cmd "mysqladmin ping -h 127.0.0.1 -uroot -prootpassword"
+          --health-cmd "pg_isready -U academiadub"
           --health-interval 5s
           --health-retries 10
       redis:
@@ -43,9 +42,6 @@ jobs:
           python-version: "3.12"
           cache: pip
           cache-dependency-path: backend/requirements-dev.txt
-
-      - name: Install MySQL client build dependencies
-        run: sudo apt-get update && sudo apt-get install --no-install-recommends -y default-libmysqlclient-dev pkg-config
 
       - name: Install dependencies
         run: pip install -r requirements-dev.txt
@@ -75,7 +71,7 @@ jobs:
         working-directory: backend
         env:
           DJANGO_SETTINGS_MODULE: academiadub.settings.local
-          DATABASE_URL: mysql://academiadub:testpassword@127.0.0.1:3306/test_academiadub
+          DATABASE_URL: postgres://academiadub:testpassword@localhost:5432/test_academiadub
           REDIS_URL: redis://localhost:6379/0
           SECRET_KEY: ci-test-secret-key-not-for-production
           DEBUG: "true"

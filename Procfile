@@ -1,0 +1,2 @@
+web: gunicorn --chdir backend academiadub.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --timeout 60 --access-logfile -
+release: python backend/manage.py migrate --noinput
