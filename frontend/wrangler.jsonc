@@ -24,7 +24,7 @@
     "preview": {
       "name": "academiadub-web-preview",
       "vars": {
-        "NEXT_PUBLIC_API_URL": "https://api-staging.academiadub.in"
+        "NEXT_PUBLIC_API_URL": "https://academiadub-api.onrender.com"
       }
     }
   }
