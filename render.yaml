@@ -48,11 +48,10 @@ services:
       - key: DATABASE_URL
         sync: false          # Fill in via dashboard — never commit real credentials
 
-      # ── Redis ────────────────────────────────────────────────────────────────
-      # Option A: Use Render's managed Redis (add a Redis service below)
-      # Option B: Use Upstash Redis free tier — paste the URL here
+      # ── Redis (Optional) ─────────────────────────────────────────────────────
+      # Optional: Defaults to in-memory/DB cache. Paste Upstash Redis URL if you want Redis.
       - key: REDIS_URL
-        sync: false
+        value: ""
 
       # ── Allowed hosts & CORS ─────────────────────────────────────────────────
       - key: ALLOWED_HOSTS

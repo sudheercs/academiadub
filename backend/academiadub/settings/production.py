@@ -59,3 +59,10 @@ EMAIL_USE_TLS = True
 # Render serves static files directly from the dyno via WhiteNoise.
 # For media files (uploads), use Supabase Storage or AWS S3.
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+
+# ── Sessions ──────────────────────────────────────────────────────────────────
+# Persist sessions in Supabase DB with cache fallback, so users/admins don't get
+# logged out when Render sleeps or restarts.
+SESSION_ENGINE = "django.contrib.sessions.backends.cached_db"
+SESSION_CACHE_ALIAS = "default"
+
