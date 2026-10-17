@@ -16,7 +16,7 @@
   // Leave NEXT_INTERNAL_API_URL unset — Workers call the public API directly.
   // Override these per environment using [env.production] blocks below.
   "vars": {
-    "NEXT_PUBLIC_API_URL": "https://api.academiadub.in"
+    "NEXT_PUBLIC_API_URL": "https://academiadub-api.onrender.com"
   },
 
   // ── Staging / preview environment ─────────────────────────────────────────
