@@ -19,6 +19,8 @@ jobs:
   deploy:
     name: Build & Deploy
     runs-on: ubuntu-latest
+    env:
+      NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
 
     steps:
       - name: Checkout
@@ -46,8 +48,6 @@ jobs:
       - name: Build for Cloudflare (OpenNext)
         working-directory: frontend
         run: npm run cf:build
-        env:
-          NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
 
       # On PRs: deploy to a preview environment (named after the PR branch)
       - name: Deploy (preview)
