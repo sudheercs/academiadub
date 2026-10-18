@@ -1,4 +1,3 @@
-from academiadub.throttles import LoginRateThrottle
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.middleware.csrf import get_token
@@ -12,8 +11,13 @@ from rest_framework_simplejwt.serializers import TokenRefreshSerializer
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
 
-from .serializers import (CustomTokenObtainPairSerializer,
-                          UserRegistrationSerializer, UserSerializer)
+from academiadub.throttles import LoginRateThrottle
+
+from .serializers import (
+    CustomTokenObtainPairSerializer,
+    UserRegistrationSerializer,
+    UserSerializer,
+)
 
 User = get_user_model()
 

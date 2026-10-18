@@ -6,10 +6,11 @@ Covers: classroom CRUD, join by code, enrollment, analytics endpoint.
 import random
 import string
 
-from apps.classes.models import Classroom, Enrollment
 from django.contrib.auth import get_user_model
 from rest_framework import status
 from rest_framework.test import APITestCase
+
+from apps.classes.models import Classroom, Enrollment
 
 User = get_user_model()
 

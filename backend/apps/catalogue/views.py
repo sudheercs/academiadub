@@ -1,6 +1,3 @@
-from apps.identity.permissions import (RequireTopicManagePermission,
-                                       RequireTopicPublishPermission,
-                                       subject_scope_ids)
 from django.db import transaction
 from django.db.models import F, Q
 from django.shortcuts import get_object_or_404
@@ -9,10 +6,21 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.identity.permissions import (
+    RequireTopicManagePermission,
+    RequireTopicPublishPermission,
+    subject_scope_ids,
+)
+
 from .models import Course, Subject, Topic, TopicVersion, TopicVersionEvent
-from .serializers import (CourseDetailSerializer, CourseListSerializer,
-                          SubjectSerializer, TopicDetailSerializer,
-                          TopicListSerializer, TopicVersionSerializer)
+from .serializers import (
+    CourseDetailSerializer,
+    CourseListSerializer,
+    SubjectSerializer,
+    TopicDetailSerializer,
+    TopicListSerializer,
+    TopicVersionSerializer,
+)
 
 
 def can_manage_all_topics(user):

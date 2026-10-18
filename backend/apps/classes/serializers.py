@@ -1,8 +1,9 @@
 import random
 import string
 
-from apps.catalogue.serializers import TopicListSerializer
 from rest_framework import serializers
+
+from apps.catalogue.serializers import TopicListSerializer
 
 from .models import Assignment, Classroom, Enrollment
 
