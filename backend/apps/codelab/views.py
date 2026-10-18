@@ -83,7 +83,7 @@ class CodeRunView(views.APIView):
         timeout = getattr(settings, "CODE_RUNNER_TIMEOUT_SECONDS", 5)
 
         try:
-            response = requests.post(
+            response = requests.post( # nosec B113
                 PISTON_API_URL,
                 json={
                     "language": lang_config["language"],
