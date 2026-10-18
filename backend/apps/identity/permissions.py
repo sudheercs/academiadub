@@ -10,7 +10,9 @@ class RequirePermission(BasePermission):
         if self.permission_key is None:
             return True
         get_scope = getattr(view, "get_permission_scope", None)
-        scope_type, scope_id = get_scope(self.permission_key) if get_scope else (None, None)
+        scope_type, scope_id = (
+            get_scope(self.permission_key) if get_scope else (None, None)
+        )
         permission_check = getattr(view, "user_has_permission", None)
         if permission_check:
             return permission_check(

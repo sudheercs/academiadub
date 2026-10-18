@@ -16,7 +16,16 @@ class SubjectSerializer(serializers.ModelSerializer):
 class CourseSummarySerializer(serializers.ModelSerializer):
     class Meta:
         model = Course
-        fields = ("id", "slug", "title", "name", "icon", "difficulty", "status", "order")
+        fields = (
+            "id",
+            "slug",
+            "title",
+            "name",
+            "icon",
+            "difficulty",
+            "status",
+            "order",
+        )
 
 
 class TopicListSerializer(serializers.ModelSerializer):
@@ -25,7 +34,18 @@ class TopicListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Topic
-        fields = ("id", "subject", "course", "parent", "slug", "title", "difficulty", "access_level", "status", "order")
+        fields = (
+            "id",
+            "subject",
+            "course",
+            "parent",
+            "slug",
+            "title",
+            "difficulty",
+            "access_level",
+            "status",
+            "order",
+        )
 
 
 class CourseListSerializer(serializers.ModelSerializer):
@@ -34,7 +54,19 @@ class CourseListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Course
-        fields = ("id", "subject", "slug", "title", "name", "description", "icon", "difficulty", "status", "order", "topic_count")
+        fields = (
+            "id",
+            "subject",
+            "slug",
+            "title",
+            "name",
+            "description",
+            "icon",
+            "difficulty",
+            "status",
+            "order",
+            "topic_count",
+        )
 
 
 class CourseDetailSerializer(serializers.ModelSerializer):
@@ -43,7 +75,19 @@ class CourseDetailSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Course
-        fields = ("id", "subject", "slug", "title", "name", "description", "icon", "difficulty", "status", "order", "topics")
+        fields = (
+            "id",
+            "subject",
+            "slug",
+            "title",
+            "name",
+            "description",
+            "icon",
+            "difficulty",
+            "status",
+            "order",
+            "topics",
+        )
 
     def get_topics(self, obj):
         user = self.context.get("request") and self.context["request"].user
@@ -60,14 +104,30 @@ class CourseDetailSerializer(serializers.ModelSerializer):
 class TopicVersionSerializer(serializers.ModelSerializer):
     class Meta:
         model = TopicVersion
-        fields = ("id", "version_no", "blocks", "author", "state", "review_note", "created_at")
-        read_only_fields = ("author", "created_at", "version_no", "state", "review_note")
+        fields = (
+            "id",
+            "version_no",
+            "blocks",
+            "author",
+            "state",
+            "review_note",
+            "created_at",
+        )
+        read_only_fields = (
+            "author",
+            "created_at",
+            "version_no",
+            "state",
+            "review_note",
+        )
 
     def validate_blocks(self, blocks):
         if not isinstance(blocks, list):
             raise serializers.ValidationError("Blocks must be a list.")
         if len(blocks) > 500:
-            raise serializers.ValidationError("A topic cannot contain more than 500 blocks.")
+            raise serializers.ValidationError(
+                "A topic cannot contain more than 500 blocks."
+            )
 
         block_fields = {
             "markdown": ({"content"}, {"content"}),
@@ -80,13 +140,17 @@ class TopicVersionSerializer(serializers.ModelSerializer):
         }
         for index, block in enumerate(blocks):
             if not isinstance(block, dict):
-                raise serializers.ValidationError({index: "Each block must be an object."})
+                raise serializers.ValidationError(
+                    {index: "Each block must be an object."}
+                )
             block_type = block.get("type")
             if block_type not in block_fields:
                 raise serializers.ValidationError({index: "Unsupported block type."})
             required, allowed = block_fields[block_type]
             if set(block) - (allowed | {"type"}):
-                raise serializers.ValidationError({index: "Block contains unsupported fields."})
+                raise serializers.ValidationError(
+                    {index: "Block contains unsupported fields."}
+                )
             for field in required:
                 if not isinstance(block.get(field), str):
                     raise serializers.ValidationError(
@@ -106,19 +170,24 @@ class TopicVersionSerializer(serializers.ModelSerializer):
                 except ValueError:
                     parsed_url = None
                     hostname = ""
-                if not parsed_url or parsed_url.scheme != "https" or hostname not in {
-                    "youtube.com",
-                    "www.youtube.com",
-                    "youtu.be",
-                    "youtube-nocookie.com",
-                    "www.youtube-nocookie.com",
-                }:
+                if (
+                    not parsed_url
+                    or parsed_url.scheme != "https"
+                    or hostname
+                    not in {
+                        "youtube.com",
+                        "www.youtube.com",
+                        "youtu.be",
+                        "youtube-nocookie.com",
+                        "www.youtube-nocookie.com",
+                    }
+                ):
                     raise serializers.ValidationError(
                         {index: "Video URL must point to YouTube."}
                     )
             if block_type == "image":
                 src = block["src"]
-                if not (src.startswith("https://") or src.startswith("/media/")):
+                if not (src.startswith(("https://", "/media/"))):
                     raise serializers.ValidationError(
                         {index: "Image source must be HTTPS or a media path."}
                     )
@@ -134,9 +203,18 @@ class TopicDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Topic
         fields = (
-            "id", "subject", "course", "parent", "slug", "title",
-            "difficulty", "access_level", "status", "order",
-            "content", "access_gated"
+            "id",
+            "subject",
+            "course",
+            "parent",
+            "slug",
+            "title",
+            "difficulty",
+            "access_level",
+            "status",
+            "order",
+            "content",
+            "access_gated",
         )
 
     def _requesting_user(self):
@@ -149,7 +227,9 @@ class TopicDetailSerializer(serializers.ModelSerializer):
         if obj.access_level == "login":
             return user and user.is_authenticated
         if obj.access_level == "paid":
-            return user and (user.is_superuser or getattr(user, "has_active_subscription", False))
+            return user and (
+                user.is_superuser or getattr(user, "has_active_subscription", False)
+            )
         return False
 
     def get_access_gated(self, obj):

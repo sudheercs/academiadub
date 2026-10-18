@@ -22,6 +22,7 @@ class DownloadViewSet(viewsets.ReadOnlyModelViewSet):
     A separate /serve/ action streams the file with access-control checks
     and logs the download event.
     """
+
     serializer_class = DownloadSerializer
     permission_classes = [permissions.AllowAny]  # Queryset does access filtering
 
@@ -43,9 +44,14 @@ class DownloadViewSet(viewsets.ReadOnlyModelViewSet):
 
         # --- Access control gates ---
         if download.access_level in ("login", "paid") and not user.is_authenticated:
-            return Response({"detail": "Authentication required."}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response(
+                {"detail": "Authentication required."},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
         if download.access_level == "paid" and not user.is_staff:
-            return Response({"detail": "Premium access required."}, status=status.HTTP_403_FORBIDDEN)
+            return Response(
+                {"detail": "Premium access required."}, status=status.HTTP_403_FORBIDDEN
+            )
 
         # Log the download
         DownloadLog.objects.create(
@@ -68,11 +74,11 @@ class DownloadViewSet(viewsets.ReadOnlyModelViewSet):
         filename = smart_str(download.file.name.split("/")[-1])
 
         response = FileResponse(file_handle, content_type=mime)
-        
+
         is_download = request.query_params.get("download", "").lower() == "true"
         disposition = "attachment" if is_download else "inline"
         response["Content-Disposition"] = f'{disposition}; filename="{filename}"'
-        
+
         if download.file_size_bytes:
             response["Content-Length"] = download.file_size_bytes
         return response
@@ -80,6 +86,7 @@ class DownloadViewSet(viewsets.ReadOnlyModelViewSet):
 
 class DownloadAdminViewSet(viewsets.ModelViewSet):
     """Staff-only CMS endpoint for uploading and managing downloads."""
+
     serializer_class = DownloadUploadSerializer
     permission_classes = [permissions.IsAdminUser]
     queryset = Download.objects.all()

@@ -1,9 +1,8 @@
 import random
 import string
 
-from rest_framework import serializers
-
 from apps.catalogue.serializers import TopicListSerializer
+from rest_framework import serializers
 
 from .models import Assignment, Classroom, Enrollment
 
@@ -17,15 +16,25 @@ class EnrollmentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Enrollment
-        fields = ("id", "student", "student_email", "status", "student_secret", "enrolled_at")
+        fields = (
+            "id",
+            "student",
+            "student_email",
+            "status",
+            "student_secret",
+            "enrolled_at",
+        )
         read_only_fields = ("id", "student", "student_secret", "enrolled_at")
 
 
 class AssignmentSerializer(serializers.ModelSerializer):
     topic = TopicListSerializer(read_only=True)
     topic_id = serializers.PrimaryKeyRelatedField(
-        write_only=True, queryset=__import__("apps.catalogue.models", fromlist=["Topic"]).Topic.objects.all(),
-        source="topic"
+        write_only=True,
+        queryset=__import__(
+            "apps.catalogue.models", fromlist=["Topic"]
+        ).Topic.objects.all(),
+        source="topic",
     )
 
     class Meta:
@@ -42,8 +51,15 @@ class ClassroomSerializer(serializers.ModelSerializer):
     class Meta:
         model = Classroom
         fields = (
-            "id", "name", "description", "instructor_email",
-            "join_code", "is_active", "student_count", "assignment_count", "created_at"
+            "id",
+            "name",
+            "description",
+            "instructor_email",
+            "join_code",
+            "is_active",
+            "student_count",
+            "assignment_count",
+            "created_at",
         )
         read_only_fields = ("id", "join_code", "created_at")
 

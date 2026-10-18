@@ -8,25 +8,73 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('catalogue', '0003_add_course_layer'),
+        ("catalogue", "0003_add_course_layer"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='TopicVersionEvent',
+            name="TopicVersionEvent",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('version_no', models.PositiveIntegerField()),
-                ('action', models.CharField(choices=[('created', 'Draft created'), ('updated', 'Draft updated'), ('submitted', 'Submitted for review'), ('approved', 'Approved'), ('returned', 'Returned for edits'), ('published', 'Published'), ('archived', 'Archived'), ('unpublished', 'Unpublished')], max_length=20)),
-                ('note', models.TextField(blank=True)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('actor', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='topic_version_events', to=settings.AUTH_USER_MODEL)),
-                ('topic', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='version_events', to='catalogue.topic')),
-                ('version', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='events', to='catalogue.topicversion')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("version_no", models.PositiveIntegerField()),
+                (
+                    "action",
+                    models.CharField(
+                        choices=[
+                            ("created", "Draft created"),
+                            ("updated", "Draft updated"),
+                            ("submitted", "Submitted for review"),
+                            ("approved", "Approved"),
+                            ("returned", "Returned for edits"),
+                            ("published", "Published"),
+                            ("archived", "Archived"),
+                            ("unpublished", "Unpublished"),
+                        ],
+                        max_length=20,
+                    ),
+                ),
+                ("note", models.TextField(blank=True)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                (
+                    "actor",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="topic_version_events",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+                (
+                    "topic",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="version_events",
+                        to="catalogue.topic",
+                    ),
+                ),
+                (
+                    "version",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="events",
+                        to="catalogue.topicversion",
+                    ),
+                ),
             ],
             options={
-                'ordering': ['created_at', 'id'],
+                "ordering": ["created_at", "id"],
             },
         ),
     ]

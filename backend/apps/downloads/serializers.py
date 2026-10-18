@@ -5,14 +5,23 @@ from .models import Download
 
 class DownloadSerializer(serializers.ModelSerializer):
     """Public-facing: no raw file URL exposed directly."""
+
     topic_title = serializers.CharField(source="topic.title", read_only=True)
     file_url = serializers.SerializerMethodField()
 
     class Meta:
         model = Download
         fields = (
-            "id", "title", "description", "topic", "topic_title",
-            "mime_type", "file_size_bytes", "access_level", "file_url", "created_at",
+            "id",
+            "title",
+            "description",
+            "topic",
+            "topic_title",
+            "mime_type",
+            "file_size_bytes",
+            "access_level",
+            "file_url",
+            "created_at",
         )
 
     def get_file_url(self, obj):
@@ -39,6 +48,8 @@ class DownloadUploadSerializer(serializers.ModelSerializer):
         file = validated_data.get("file")
         if file:
             validated_data["file_size_bytes"] = file.size
-            validated_data["mime_type"] = getattr(file, "content_type", "application/octet-stream")
+            validated_data["mime_type"] = getattr(
+                file, "content_type", "application/octet-stream"
+            )
         validated_data["uploaded_by"] = self.context["request"].user
         return super().create(validated_data)

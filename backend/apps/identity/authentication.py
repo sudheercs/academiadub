@@ -1,5 +1,4 @@
 from rest_framework.authentication import SessionAuthentication
-from rest_framework.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
 
@@ -13,11 +12,7 @@ class CookieJWTAuthentication(JWTAuthentication):
         if raw_token is None:
             return None
 
-        try:
-            validated_token = self.get_validated_token(raw_token.encode())
-        except AuthenticationFailed:
-            raise
-
+        validated_token = self.get_validated_token(raw_token.encode())
         user_auth = self.get_user(validated_token), validated_token
         SessionAuthentication().enforce_csrf(request)
         return user_auth

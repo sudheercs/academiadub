@@ -2,6 +2,7 @@
 Phase 7 — Security & API tests for the identity app.
 Covers: registration, login throttle, JWT tokens, current-user endpoint.
 """
+
 from django.contrib.auth import get_user_model
 from django.core.cache import cache
 from django.test import Client, TestCase
@@ -17,11 +18,15 @@ class RegistrationTests(APITestCase):
         self.url = reverse("register")
 
     def test_register_with_valid_data(self):
-        res = self.client.post(self.url, {
-            "email": "new@test.com",
-            "password": "SecurePass123!",
-            "profile": {"name": "New User"}
-        }, format="json")
+        res = self.client.post(
+            self.url,
+            {
+                "email": "new@test.com",
+                "password": "SecurePass123!",
+                "profile": {"name": "New User"},
+            },
+            format="json",
+        )
         self.assertEqual(res.status_code, status.HTTP_201_CREATED)
         self.assertIn("email", res.data)
 
@@ -43,10 +48,14 @@ class LoginTests(APITestCase):
     def setUp(self):
         cache.clear()
         self.url = reverse("token_obtain_pair")
-        self.user = User.objects.create_user(email="login@test.com", password="Password123!")
+        self.user = User.objects.create_user(
+            email="login@test.com", password="Password123!"
+        )
 
     def test_login_valid_credentials(self):
-        res = self.client.post(self.url, {"email": "login@test.com", "password": "Password123!"})
+        res = self.client.post(
+            self.url, {"email": "login@test.com", "password": "Password123!"}
+        )
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertNotIn("access", res.data)
         self.assertNotIn("refresh", res.data)
@@ -83,16 +92,21 @@ class LoginTests(APITestCase):
 
         from rest_framework_simplejwt.exceptions import TokenError
         from rest_framework_simplejwt.serializers import TokenRefreshSerializer
+
         serializer = TokenRefreshSerializer(data={"refresh": old_refresh})
         with self.assertRaises(TokenError):
             serializer.is_valid(raise_exception=True)
 
     def test_login_wrong_password(self):
-        res = self.client.post(self.url, {"email": "login@test.com", "password": "wrongpassword"})
+        res = self.client.post(
+            self.url, {"email": "login@test.com", "password": "wrongpassword"}
+        )
         self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_login_nonexistent_user(self):
-        res = self.client.post(self.url, {"email": "ghost@test.com", "password": "anything"})
+        res = self.client.post(
+            self.url, {"email": "ghost@test.com", "password": "anything"}
+        )
         self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
 
 

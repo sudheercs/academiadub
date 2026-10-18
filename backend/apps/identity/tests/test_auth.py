@@ -22,10 +22,10 @@ class AuthTests(TestCase):
                 "institution": "Test High",
                 "grade_or_year": "10",
                 "locale": "en",
-                "guardian_consent": True
-            }
+                "guardian_consent": True,
+            },
         }
-        
+
         response = self.client.post(self.register_url, payload, format="json")
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(User.objects.count(), 1)
@@ -33,13 +33,10 @@ class AuthTests(TestCase):
 
     def test_user_login(self):
         # Create a user first
-        user = User.objects.create_user(email="login@example.com", password="mypassword")
-        
-        payload = {
-            "email": "login@example.com",
-            "password": "mypassword"
-        }
-        
+        User.objects.create_user(email="login@example.com", password="mypassword")
+
+        payload = {"email": "login@example.com", "password": "mypassword"}
+
         response = self.client.post(self.login_url, payload, format="json")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertNotIn("access", response.data)

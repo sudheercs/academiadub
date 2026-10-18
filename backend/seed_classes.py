@@ -9,15 +9,16 @@ import random
 import string
 from datetime import UTC
 
-from django.contrib.auth import get_user_model
-
 from apps.catalogue.models import Topic
 from apps.classes.models import Assignment, Classroom, Enrollment
+from django.contrib.auth import get_user_model
 
 User = get_user_model()
 
+
 def generate_code(length=8):
     return "".join(random.choices(string.ascii_uppercase + string.digits, k=length))
+
 
 def seed():
     Classroom.objects.all().delete()
@@ -27,7 +28,7 @@ def seed():
     # Create a student user
     student, _ = User.objects.get_or_create(
         email="student@academiadub.in",
-        defaults={"is_staff": False, "is_superuser": False, "status": "active"}
+        defaults={"is_staff": False, "is_superuser": False, "status": "active"},
     )
     student.set_password("student123")
     student.save()
@@ -63,6 +64,7 @@ def seed():
 
     # Assign all published topics
     from datetime import datetime, timedelta
+
     now = datetime.now(UTC)
 
     for i, topic in enumerate(topics[:3]):
@@ -76,6 +78,7 @@ def seed():
     print(f"\nBootcamp join code: {bootcamp.join_code}")
     print(f"Masterclass join code: {masterclass.join_code}")
     print("\nSeeding complete.")
+
 
 if __name__ == "__main__":
     seed()

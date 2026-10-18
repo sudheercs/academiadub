@@ -1,12 +1,13 @@
 from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 
-from .views import CodeFileViewSet, CodeFolderViewSet, CodeRunView, CodeSnippetViewSet
+from .views import (CodeFileViewSet, CodeFolderViewSet, CodeRunView,
+                    CodeSnippetViewSet)
 
 router = DefaultRouter()
-router.register(r"folders",  CodeFolderViewSet,  basename="code-folder")
+router.register(r"folders", CodeFolderViewSet, basename="code-folder")
 router.register(r"snippets", CodeSnippetViewSet, basename="code-snippet")
-router.register(r"files",    CodeFileViewSet,    basename="code-file")
+router.register(r"files", CodeFileViewSet, basename="code-file")
 
 urlpatterns = [
     path("run/", CodeRunView.as_view(), name="codelab-run"),

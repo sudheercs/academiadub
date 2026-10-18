@@ -9,7 +9,15 @@ class UserProgressSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = UserProgress
-        fields = ("id", "topic", "topic_title", "topic_slug", "state", "read_at", "completed_at")
+        fields = (
+            "id",
+            "topic",
+            "topic_title",
+            "topic_slug",
+            "state",
+            "read_at",
+            "completed_at",
+        )
         read_only_fields = ("user", "read_at")
 
 
@@ -20,5 +28,12 @@ class BookmarkSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Bookmark
-        fields = ("id", "topic", "topic_title", "topic_slug", "subject_slug", "created_at")
+        fields = (
+            "id",
+            "topic",
+            "topic_title",
+            "topic_slug",
+            "subject_slug",
+            "created_at",
+        )
         read_only_fields = ("user", "created_at")

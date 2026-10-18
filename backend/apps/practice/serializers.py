@@ -12,6 +12,7 @@ class ChoiceSerializer(serializers.ModelSerializer):
 
 class ChoiceWithAnswerSerializer(serializers.ModelSerializer):
     """Includes the correct flag — used only in post-submit feedback."""
+
     class Meta:
         model = Choice
         fields = ["id", "text", "order", "is_correct"]
@@ -27,6 +28,7 @@ class QuestionSerializer(serializers.ModelSerializer):
 
 class QuestionWithAnswerSerializer(serializers.ModelSerializer):
     """Includes explanation and correct answers — used in post-submit feedback."""
+
     choices = ChoiceWithAnswerSerializer(many=True, read_only=True)
 
     class Meta:
@@ -39,7 +41,14 @@ class QuizListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Quiz
-        fields = ["id", "title", "description", "pass_mark", "time_limit_minutes", "question_count"]
+        fields = [
+            "id",
+            "title",
+            "description",
+            "pass_mark",
+            "time_limit_minutes",
+            "question_count",
+        ]
 
     def get_question_count(self, obj):
         return obj.questions.count()
@@ -50,7 +59,14 @@ class QuizDetailSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Quiz
-        fields = ["id", "title", "description", "pass_mark", "time_limit_minutes", "questions"]
+        fields = [
+            "id",
+            "title",
+            "description",
+            "pass_mark",
+            "time_limit_minutes",
+            "questions",
+        ]
 
 
 class AttemptSerializer(serializers.ModelSerializer):
@@ -59,6 +75,7 @@ class AttemptSerializer(serializers.ModelSerializer):
     Exposes status, saved answers, and timestamps — no grading info.
     Used for start / save / resume responses.
     """
+
     class Meta:
         model = Attempt
         fields = ["id", "quiz", "status", "answers", "started_at", "submitted_at"]
@@ -67,19 +84,29 @@ class AttemptSerializer(serializers.ModelSerializer):
 
 class AttemptSaveSerializer(serializers.Serializer):
     """Validates a save-progress payload (partial answers are fine)."""
+
     answers = serializers.DictField(
         child=serializers.ListField(child=serializers.UUIDField()),
-        help_text="Map of question_id (str) → list of chosen choice_ids (str). Partial is OK."
+        help_text="Map of question_id (str) → list of chosen choice_ids (str). Partial is OK.",
     )
 
 
 class AttemptResultSerializer(serializers.ModelSerializer):
     """Full graded result — returned only after submission."""
-    questions = QuestionWithAnswerSerializer(source="quiz.questions", many=True, read_only=True)
+
+    questions = QuestionWithAnswerSerializer(
+        source="quiz.questions", many=True, read_only=True
+    )
 
     class Meta:
         model = Attempt
         fields = [
-            "id", "status", "score_percent", "passed", "answers",
-            "started_at", "submitted_at", "questions",
+            "id",
+            "status",
+            "score_percent",
+            "passed",
+            "answers",
+            "started_at",
+            "submitted_at",
+            "questions",
         ]

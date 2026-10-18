@@ -11,7 +11,9 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name="classroom",
             name="join_code",
-            field=models.CharField(blank=True, db_index=True, max_length=12, unique=True),
+            field=models.CharField(
+                blank=True, db_index=True, max_length=12, unique=True
+            ),
         ),
         migrations.AddField(
             model_name="enrollment",

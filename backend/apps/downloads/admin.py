@@ -5,7 +5,14 @@ from .models import Download, DownloadLog
 
 @admin.register(Download)
 class DownloadAdmin(admin.ModelAdmin):
-    list_display = ("title", "topic", "access_level", "mime_type", "file_size_bytes", "uploaded_by")
+    list_display = (
+        "title",
+        "topic",
+        "access_level",
+        "mime_type",
+        "file_size_bytes",
+        "uploaded_by",
+    )
     list_filter = ("access_level", "mime_type")
     search_fields = ("title", "topic__title")
     readonly_fields = ("file_size_bytes", "mime_type", "created_at")

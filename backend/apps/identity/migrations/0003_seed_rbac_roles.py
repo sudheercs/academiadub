@@ -30,7 +30,9 @@ def seed_roles(apps, schema_editor):
             permission, _ = Permission.objects.using(database).get_or_create(
                 key=permission_key,
                 defaults={
-                    "description": permission_key.replace(":", " ").replace("_", " ").title()
+                    "description": permission_key.replace(":", " ")
+                    .replace("_", " ")
+                    .title()
                 },
             )
             role.permissions.add(permission)

@@ -8,8 +8,16 @@ from .models import Consent, Permission, Profile, Role, User, UserRole
 @admin.register(User)
 class UserAdmin(BaseUserAdmin):
     """Custom admin for email-based User model."""
+
     ordering = ("-created_at",)
-    list_display = ("email", "status", "is_staff", "is_superuser", "email_verified_at", "created_at")
+    list_display = (
+        "email",
+        "status",
+        "is_staff",
+        "is_superuser",
+        "email_verified_at",
+        "created_at",
+    )
     list_filter = ("status", "is_staff", "is_superuser", "is_active")
     search_fields = ("email",)
     readonly_fields = ("created_at", "updated_at", "last_login")
@@ -24,10 +32,20 @@ class UserAdmin(BaseUserAdmin):
     )
 
     add_fieldsets = (
-        (None, {
-            "classes": ("wide",),
-            "fields": ("email", "password1", "password2", "status", "is_staff", "is_superuser"),
-        }),
+        (
+            None,
+            {
+                "classes": ("wide",),
+                "fields": (
+                    "email",
+                    "password1",
+                    "password2",
+                    "status",
+                    "is_staff",
+                    "is_superuser",
+                ),
+            },
+        ),
     )
 
     # email is the USERNAME_FIELD, not username

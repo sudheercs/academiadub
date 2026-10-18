@@ -8,43 +8,57 @@ class Subject(models.Model):
     icon = models.CharField(max_length=50, blank=True)
     description = models.TextField(blank=True)
     status = models.CharField(
-        max_length=20, 
-        choices=[("draft", "Draft"), ("published", "Published"), ("archived", "Archived")],
-        default="draft"
+        max_length=20,
+        choices=[
+            ("draft", "Draft"),
+            ("published", "Published"),
+            ("archived", "Archived"),
+        ],
+        default="draft",
     )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        ordering = ['name']
+        ordering = ["name"]
 
     def __str__(self):
         return self.name
 
 
 class Course(models.Model):
-    subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name="courses")
+    subject = models.ForeignKey(
+        Subject, on_delete=models.CASCADE, related_name="courses"
+    )
     slug = models.SlugField(max_length=100)
     title = models.CharField(max_length=150)
     description = models.TextField(blank=True)
     icon = models.CharField(max_length=50, blank=True)
     difficulty = models.CharField(
         max_length=20,
-        choices=[("beginner", "Beginner"), ("intermediate", "Intermediate"), ("advanced", "Advanced")],
-        default="beginner"
+        choices=[
+            ("beginner", "Beginner"),
+            ("intermediate", "Intermediate"),
+            ("advanced", "Advanced"),
+        ],
+        default="beginner",
     )
     status = models.CharField(
-        max_length=20, 
-        choices=[("draft", "Draft"), ("published", "Published"), ("archived", "Archived")],
-        default="draft"
+        max_length=20,
+        choices=[
+            ("draft", "Draft"),
+            ("published", "Published"),
+            ("archived", "Archived"),
+        ],
+        default="draft",
     )
     order = models.PositiveIntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        unique_together = ('subject', 'slug')
-        ordering = ['order', 'created_at']
+        unique_together = ("subject", "slug")
+        ordering = ["order", "created_at"]
 
     def __str__(self):
         return f"{self.subject.slug} / {self.title}"
@@ -60,38 +74,54 @@ class Course(models.Model):
 
 class TopicManager(models.Manager):
     def create(self, **kwargs):
-        if 'subject' in kwargs and 'course' not in kwargs:
-            subject = kwargs.pop('subject')
+        if "subject" in kwargs and "course" not in kwargs:
+            subject = kwargs.pop("subject")
             course, _ = Course.objects.get_or_create(
                 subject=subject,
                 slug="general",
-                defaults={"title": f"{subject.name} - General", "status": "published"}
+                defaults={"title": f"{subject.name} - General", "status": "published"},
             )
-            kwargs['course'] = course
+            kwargs["course"] = course
         return super().create(**kwargs)
 
 
 class Topic(models.Model):
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name="topics")
-    parent = models.ForeignKey("self", null=True, blank=True, on_delete=models.CASCADE, related_name="subtopics")
+    parent = models.ForeignKey(
+        "self",
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
+        related_name="subtopics",
+    )
     slug = models.SlugField(max_length=100)
     title = models.CharField(max_length=150)
     difficulty = models.CharField(
         max_length=20,
-        choices=[("beginner", "Beginner"), ("intermediate", "Intermediate"), ("advanced", "Advanced")],
-        default="beginner"
+        choices=[
+            ("beginner", "Beginner"),
+            ("intermediate", "Intermediate"),
+            ("advanced", "Advanced"),
+        ],
+        default="beginner",
     )
     access_level = models.CharField(
         max_length=20,
         choices=[("free", "Free"), ("login", "Login Required"), ("paid", "Paid")],
-        default="free"
+        default="free",
     )
     status = models.CharField(
-        max_length=20, 
-        choices=[("draft", "Draft"), ("published", "Published"), ("archived", "Archived")],
-        default="draft"
+        max_length=20,
+        choices=[
+            ("draft", "Draft"),
+            ("published", "Published"),
+            ("archived", "Archived"),
+        ],
+        default="draft",
     )
-    current_version_id = models.IntegerField(null=True, blank=True) # Will point to active TopicVersion.version_no
+    current_version_id = models.IntegerField(
+        null=True, blank=True
+    )  # Will point to active TopicVersion.version_no
     order = models.PositiveIntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -99,21 +129,28 @@ class Topic(models.Model):
     objects = TopicManager()
 
     class Meta:
-        unique_together = ('course', 'slug')
-        ordering = ['order', 'created_at']
+        unique_together = ("course", "slug")
+        ordering = ["order", "created_at"]
 
     def __init__(self, *args, **kwargs):
         subject = kwargs.pop("subject", None)
         super().__init__(*args, **kwargs)
-        if subject and (not hasattr(self, 'course_id') or not self.course_id):
+        if subject and (not hasattr(self, "course_id") or not self.course_id):
             self._pending_subject = subject
 
     def save(self, *args, **kwargs):
-        if not self.course_id and hasattr(self, '_pending_subject') and self._pending_subject:
+        if (
+            not self.course_id
+            and hasattr(self, "_pending_subject")
+            and self._pending_subject
+        ):
             course, _ = Course.objects.get_or_create(
                 subject=self._pending_subject,
                 slug="general",
-                defaults={"title": f"{self._pending_subject.name} - General", "status": "published"}
+                defaults={
+                    "title": f"{self._pending_subject.name} - General",
+                    "status": "published",
+                },
             )
             self.course = course
         super().save(*args, **kwargs)
@@ -132,25 +169,30 @@ class TopicVersion(models.Model):
     topic = models.ForeignKey(Topic, on_delete=models.CASCADE, related_name="versions")
     version_no = models.PositiveIntegerField()
     blocks = models.JSONField(default=list)
-    author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name="authored_topics")
+    author = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name="authored_topics",
+    )
     state = models.CharField(
         max_length=20,
         choices=[
-            ("draft", "Draft"), 
-            ("in_review", "In Review"), 
-            ("approved", "Approved"), 
-            ("published", "Published"), 
-            ("archived", "Archived")
+            ("draft", "Draft"),
+            ("in_review", "In Review"),
+            ("approved", "Approved"),
+            ("published", "Published"),
+            ("archived", "Archived"),
         ],
-        default="draft"
+        default="draft",
     )
     review_note = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        unique_together = ('topic', 'version_no')
-        ordering = ['-version_no']
+        unique_together = ("topic", "version_no")
+        ordering = ["-version_no"]
 
     def __str__(self):
         return f"{self.topic.title} - v{self.version_no}"
@@ -168,7 +210,9 @@ class TopicVersionEvent(models.Model):
         ("unpublished", "Unpublished"),
     ]
 
-    topic = models.ForeignKey(Topic, on_delete=models.CASCADE, related_name="version_events")
+    topic = models.ForeignKey(
+        Topic, on_delete=models.CASCADE, related_name="version_events"
+    )
     version = models.ForeignKey(
         TopicVersion,
         null=True,

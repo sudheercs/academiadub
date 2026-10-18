@@ -1,3 +1,4 @@
+from academiadub.throttles import LoginRateThrottle
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.middleware.csrf import get_token
@@ -11,13 +12,8 @@ from rest_framework_simplejwt.serializers import TokenRefreshSerializer
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
 
-from academiadub.throttles import LoginRateThrottle
-
-from .serializers import (
-    CustomTokenObtainPairSerializer,
-    UserRegistrationSerializer,
-    UserSerializer,
-)
+from .serializers import (CustomTokenObtainPairSerializer,
+                          UserRegistrationSerializer, UserSerializer)
 
 User = get_user_model()
 
@@ -120,7 +116,9 @@ class LogoutView(generics.GenericAPIView):
 
     def post(self, request, *args, **kwargs):
         SessionAuthentication().enforce_csrf(request)
-        response = Response({"detail": "Logged out successfully."}, status=status.HTTP_200_OK)
+        response = Response(
+            {"detail": "Logged out successfully."}, status=status.HTTP_200_OK
+        )
         refresh_token = request.COOKIES.get("refresh_token")
         if refresh_token:
             try:

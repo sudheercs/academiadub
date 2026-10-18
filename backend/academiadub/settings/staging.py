@@ -1,4 +1,5 @@
 """Staging settings — mirrors production, less strict secrets."""
+
 from .base import *
 
 DEBUG = False

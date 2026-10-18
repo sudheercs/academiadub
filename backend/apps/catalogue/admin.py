@@ -5,22 +5,46 @@ from django.contrib import admin
 
 from .models import Course, Subject, Topic, TopicVersion, TopicVersionEvent
 
-BLOCKS_PLACEHOLDER = json.dumps([
-    {"type": "paragraph", "content": "Write your introduction here. **Bold** and *italic* supported."},
-    {"type": "heading", "content": "Section Title"},
-    {"type": "code_snippet", "language": "python", "content": "print('Hello, World!')"},
-    {"type": "callout", "variant": "info", "content": "Tip: use callout blocks for important notes."},
-    {"type": "youtube", "url": "https://youtu.be/VIDEO_ID", "caption": "Optional caption"},
-    {"type": "code_lab", "language": "python", "starter_code": "# Try it yourself!\nprint('edit me')"},
-], indent=2)
+BLOCKS_PLACEHOLDER = json.dumps(
+    [
+        {
+            "type": "paragraph",
+            "content": "Write your introduction here. **Bold** and *italic* supported.",
+        },
+        {"type": "heading", "content": "Section Title"},
+        {
+            "type": "code_snippet",
+            "language": "python",
+            "content": "print('Hello, World!')",
+        },
+        {
+            "type": "callout",
+            "variant": "info",
+            "content": "Tip: use callout blocks for important notes.",
+        },
+        {
+            "type": "youtube",
+            "url": "https://youtu.be/VIDEO_ID",
+            "caption": "Optional caption",
+        },
+        {
+            "type": "code_lab",
+            "language": "python",
+            "starter_code": "# Try it yourself!\nprint('edit me')",
+        },
+    ],
+    indent=2,
+)
 
 
 class TopicVersionAdminForm(forms.ModelForm):
     blocks = forms.JSONField(
-        widget=forms.Textarea(attrs={
-            "rows": 30,
-            "style": "font-family: monospace; font-size: 13px; width: 100%;",
-        }),
+        widget=forms.Textarea(
+            attrs={
+                "rows": 30,
+                "style": "font-family: monospace; font-size: 13px; width: 100%;",
+            }
+        ),
         help_text=(
             "JSON array of content blocks. Supported types: "
             "<code>paragraph</code>, <code>heading</code>, <code>code_snippet</code>, "
@@ -39,7 +63,15 @@ class TopicVersionInline(admin.StackedInline):
     model = TopicVersion
     form = TopicVersionAdminForm
     extra = 0
-    readonly_fields = ("version_no", "state", "author", "review_note", "blocks", "created_at", "updated_at")
+    readonly_fields = (
+        "version_no",
+        "state",
+        "author",
+        "review_note",
+        "blocks",
+        "created_at",
+        "updated_at",
+    )
     fields = ("version_no", "state", "author", "review_note", "blocks", "created_at")
     show_change_link = True
     can_delete = False
@@ -83,7 +115,17 @@ class CourseAdmin(admin.ModelAdmin):
 
 @admin.register(Topic)
 class TopicAdmin(admin.ModelAdmin):
-    list_display = ("title", "course", "get_subject", "slug", "difficulty", "access_level", "status", "current_version_id", "order")
+    list_display = (
+        "title",
+        "course",
+        "get_subject",
+        "slug",
+        "difficulty",
+        "access_level",
+        "status",
+        "current_version_id",
+        "order",
+    )
     list_filter = ("status", "difficulty", "access_level", "course__subject", "course")
     search_fields = ("title", "slug")
     prepopulated_fields = {"slug": ("title",)}
@@ -102,8 +144,14 @@ class TopicVersionAdmin(admin.ModelAdmin):
     list_filter = ("state",)
     search_fields = ("topic__title",)
     readonly_fields = (
-        "topic", "created_at", "updated_at", "version_no", "author",
-        "state", "review_note", "blocks",
+        "topic",
+        "created_at",
+        "updated_at",
+        "version_no",
+        "author",
+        "state",
+        "review_note",
+        "blocks",
     )
     raw_id_fields = ("topic",)
 
@@ -130,7 +178,13 @@ class TopicVersionEventAdmin(admin.ModelAdmin):
     list_filter = ("action", "created_at")
     search_fields = ("topic__title", "actor__email", "note")
     readonly_fields = (
-        "topic", "version", "version_no", "actor", "action", "note", "created_at",
+        "topic",
+        "version",
+        "version_no",
+        "actor",
+        "action",
+        "note",
+        "created_at",
     )
 
     def has_add_permission(self, request):

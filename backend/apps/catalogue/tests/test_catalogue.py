@@ -1,11 +1,10 @@
+from apps.catalogue.models import Course, Subject, Topic, TopicVersionEvent
+from apps.identity.models import Permission, Role, UserRole
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APIClient
-
-from apps.catalogue.models import Course, Subject, Topic, TopicVersionEvent
-from apps.identity.models import Permission, Role, UserRole
 
 User = get_user_model()
 
@@ -14,26 +13,28 @@ class CatalogueTests(TestCase):
     def setUp(self):
         self.client = APIClient()
         self.subject = Subject.objects.create(
-            slug="python",
-            name="Python Programming",
-            status="published"
+            slug="python", name="Python Programming", status="published"
         )
         self.course = Course.objects.create(
             subject=self.subject,
             slug="python-basics",
             title="Python Basics",
             difficulty="beginner",
-            status="published"
+            status="published",
         )
         self.topic = Topic.objects.create(
             course=self.course,
             slug="intro",
             title="Introduction to Python",
             status="published",
-            access_level="free"
+            access_level="free",
         )
-        self.admin = User.objects.create_superuser(email="admin@example.com", password="password")
-        self.student = User.objects.create_user(email="student@example.com", password="password")
+        self.admin = User.objects.create_superuser(
+            email="admin@example.com", password="password"
+        )
+        self.student = User.objects.create_user(
+            email="student@example.com", password="password"
+        )
 
     def test_list_subjects(self):
         url = reverse("subject-list")
@@ -51,8 +52,15 @@ class CatalogueTests(TestCase):
         self.assertEqual(response.data["results"][0]["subject"]["slug"], "python")
 
     def test_filter_courses_by_subject(self):
-        other_subject = Subject.objects.create(slug="js", name="JavaScript", status="published")
-        Course.objects.create(subject=other_subject, slug="js-basics", title="JS Basics", status="published")
+        other_subject = Subject.objects.create(
+            slug="js", name="JavaScript", status="published"
+        )
+        Course.objects.create(
+            subject=other_subject,
+            slug="js-basics",
+            title="JS Basics",
+            status="published",
+        )
 
         url = f"{reverse('course-list')}?subject=python"
         response = self.client.get(url)
@@ -78,8 +86,15 @@ class CatalogueTests(TestCase):
         self.assertEqual(response.data["results"][0]["subject"]["slug"], "python")
 
     def test_filter_topics_by_course(self):
-        course2 = Course.objects.create(subject=self.subject, slug="python-adv", title="Advanced", status="published")
-        Topic.objects.create(course=course2, slug="metaclasses", title="Metaclasses", status="published")
+        course2 = Course.objects.create(
+            subject=self.subject,
+            slug="python-adv",
+            title="Advanced",
+            status="published",
+        )
+        Topic.objects.create(
+            course=course2, slug="metaclasses", title="Metaclasses", status="published"
+        )
 
         url = f"{reverse('topic-list')}?course=python-basics"
         response = self.client.get(url)
@@ -87,9 +102,18 @@ class CatalogueTests(TestCase):
         self.assertEqual(response.data["results"][0]["slug"], "intro")
 
     def test_filter_topics_by_subject(self):
-        other_subject = Subject.objects.create(slug="rust", name="Rust", status="published")
-        other_course = Course.objects.create(subject=other_subject, slug="rust-basics", title="Rust 101", status="published")
-        Topic.objects.create(course=other_course, slug="ownership", title="Ownership", status="published")
+        other_subject = Subject.objects.create(
+            slug="rust", name="Rust", status="published"
+        )
+        other_course = Course.objects.create(
+            subject=other_subject,
+            slug="rust-basics",
+            title="Rust 101",
+            status="published",
+        )
+        Topic.objects.create(
+            course=other_course, slug="ownership", title="Ownership", status="published"
+        )
 
         url = f"{reverse('topic-list')}?subject=python"
         response = self.client.get(url)
@@ -97,7 +121,12 @@ class CatalogueTests(TestCase):
         self.assertEqual(response.data["results"][0]["slug"], "intro")
 
     def test_draft_course_hidden_from_public(self):
-        Course.objects.create(subject=self.subject, slug="draft-course", title="Draft Course", status="draft")
+        Course.objects.create(
+            subject=self.subject,
+            slug="draft-course",
+            title="Draft Course",
+            status="draft",
+        )
         url = reverse("course-list")
         response = self.client.get(url)
         slugs = [c["slug"] for c in response.data["results"]]
@@ -107,21 +136,21 @@ class CatalogueTests(TestCase):
         Subject.objects.create(slug="draft-subj", name="Draft", status="draft")
         url = reverse("subject-list")
         response = self.client.get(url)
-        self.assertEqual(len(response.data["results"]), 1) # Only published
+        self.assertEqual(len(response.data["results"]), 1)  # Only published
 
     def test_draft_subject_visible_to_admin(self):
         Subject.objects.create(slug="draft-subj", name="Draft", status="draft")
         url = reverse("subject-list")
         self.client.force_authenticate(user=self.admin)
         response = self.client.get(url)
-        self.assertEqual(len(response.data["results"]), 2) # Both published and draft
+        self.assertEqual(len(response.data["results"]), 2)  # Both published and draft
 
     def test_create_topic_version(self):
         self.client.force_authenticate(user=self.admin)
         url = reverse("topic-versions-list", kwargs={"topic_pk": self.topic.id})
         payload = {
             "blocks": [{"type": "text", "content": "Hello World"}],
-            "state": "draft"
+            "state": "draft",
         }
         response = self.client.post(url, payload, format="json")
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
@@ -129,9 +158,13 @@ class CatalogueTests(TestCase):
         self.assertEqual(self.topic.versions.count(), 1)
 
     def assign_role(self, user, role_key, permission_keys, scope_id):
-        role, _ = Role.objects.get_or_create(key=role_key, defaults={"name": role_key.title()})
+        role, _ = Role.objects.get_or_create(
+            key=role_key, defaults={"name": role_key.title()}
+        )
         for key in permission_keys:
-            permission, _ = Permission.objects.get_or_create(key=key, defaults={"description": key})
+            permission, _ = Permission.objects.get_or_create(
+                key=key, defaults={"description": key}
+            )
             role.permissions.add(permission)
         UserRole.objects.create(
             user=user,
@@ -141,7 +174,9 @@ class CatalogueTests(TestCase):
         )
 
     def test_editor_permission_is_limited_to_assigned_subject(self):
-        editor = User.objects.create_user(email="editor@example.com", password="EditorPass123!")
+        editor = User.objects.create_user(
+            email="editor@example.com", password="EditorPass123!"
+        )
         other_subject = Subject.objects.create(
             slug="javascript",
             name="JavaScript",
@@ -176,8 +211,12 @@ class CatalogueTests(TestCase):
         self.assertEqual(denied.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_editorial_review_publish_lifecycle(self):
-        editor = User.objects.create_user(email="writer@example.com", password="WriterPass123!")
-        reviewer = User.objects.create_user(email="reviewer@example.com", password="ReviewerPass123!")
+        editor = User.objects.create_user(
+            email="writer@example.com", password="WriterPass123!"
+        )
+        reviewer = User.objects.create_user(
+            email="reviewer@example.com", password="ReviewerPass123!"
+        )
         self.assign_role(editor, "editor", ["topic:manage"], self.subject.id)
         self.assign_role(reviewer, "reviewer", ["topic:publish"], self.subject.id)
 

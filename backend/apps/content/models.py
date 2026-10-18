@@ -1,12 +1,14 @@
+from apps.catalogue.models import Topic
 from django.conf import settings
 from django.db import models
-
-from apps.catalogue.models import Topic
 
 
 class UserProgress(models.Model):
     """Tracks a user's read/completion state per topic."""
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="progress")
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="progress"
+    )
     topic = models.ForeignKey(Topic, on_delete=models.CASCADE, related_name="progress")
     state = models.CharField(
         max_length=20,
@@ -29,7 +31,9 @@ class UserProgress(models.Model):
 
 
 class Bookmark(models.Model):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="bookmarks")
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="bookmarks"
+    )
     topic = models.ForeignKey(Topic, on_delete=models.CASCADE, related_name="bookmarks")
     created_at = models.DateTimeField(auto_now_add=True)
 

@@ -4,6 +4,7 @@ Normalises all error responses to a consistent JSON envelope:
   { "error": "...", "detail": "..." }
 and logs server errors with full stack traces.
 """
+
 import logging
 
 from rest_framework import status
@@ -21,7 +22,7 @@ def custom_exception_handler(exc, context):
         logger.exception("Unhandled exception in view %s", context.get("view"))
         return Response(
             {"error": "An internal server error occurred.", "detail": str(exc)},
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
 
     # Normalise DRF's default error shape

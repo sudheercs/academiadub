@@ -1,10 +1,7 @@
 import uuid
 
-from django.contrib.auth.models import (
-    AbstractBaseUser,
-    BaseUserManager,
-    PermissionsMixin,
-)
+from django.contrib.auth.models import (AbstractBaseUser, BaseUserManager,
+                                        PermissionsMixin)
 from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
@@ -33,7 +30,11 @@ class User(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(_("email address"), unique=True)
     status = models.CharField(
         max_length=20,
-        choices=[("active", "Active"), ("suspended", "Suspended"), ("pending", "Pending Verification")],
+        choices=[
+            ("active", "Active"),
+            ("suspended", "Suspended"),
+            ("pending", "Pending Verification"),
+        ],
         default="pending",
     )
     email_verified_at = models.DateTimeField(null=True, blank=True)

@@ -29,7 +29,11 @@ def _env_value(name, default=None, *, cast=None):
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
 SECRET_KEY = _env_value("SECRET_KEY", default="dev-secret-key-not-for-production")
-DEBUG = _env_value("DEBUG", default=False, cast=lambda value: value.lower() in {"1", "true", "yes", "on"})
+DEBUG = _env_value(
+    "DEBUG",
+    default=False,
+    cast=lambda value: value.lower() in {"1", "true", "yes", "on"},
+)
 ALLOWED_HOSTS = _env_value("ALLOWED_HOSTS", default="localhost", cast=Csv())
 
 # ── Installed apps ───────────────────────────────────────────────────────────
@@ -106,10 +110,14 @@ import dj_database_url
 
 DATABASE_URL = os.getenv("DATABASE_URL") or config("DATABASE_URL", default="")
 if not DATABASE_URL:
-    raise ImproperlyConfigured("DATABASE_URL must be set to a mysql:// connection string.")
+    raise ImproperlyConfigured(
+        "DATABASE_URL must be set to a mysql:// connection string."
+    )
 
 DATABASES = {
-    "default": dj_database_url.parse(DATABASE_URL, conn_max_age=600, conn_health_checks=True)
+    "default": dj_database_url.parse(
+        DATABASE_URL, conn_max_age=600, conn_health_checks=True
+    )
 }
 _SUPPORTED_ENGINES = {
     "django.db.backends.mysql",
@@ -150,7 +158,9 @@ SESSION_CACHE_ALIAS = "default"
 AUTH_USER_MODEL = "identity.User"
 
 AUTH_PASSWORD_VALIDATORS = [
-    {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
+    {
+        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"
+    },
     {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},
     {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
@@ -181,8 +191,8 @@ REST_FRAMEWORK = {
     "DEFAULT_THROTTLE_RATES": {
         "anon": "60/minute",
         "user": "300/minute",
-        "login": "10/minute",     # Applied to auth endpoints
-        "coderun": "20/minute",   # Applied to /api/codelab/run/
+        "login": "10/minute",  # Applied to auth endpoints
+        "coderun": "20/minute",  # Applied to /api/codelab/run/
     },
     "DEFAULT_RENDERER_CLASSES": [
         "rest_framework.renderers.JSONRenderer",
@@ -280,7 +290,11 @@ LOGGING = {
     },
     "loggers": {
         "django": {"handlers": ["console"], "level": "WARNING", "propagate": False},
-        "django.request": {"handlers": ["console"], "level": "ERROR", "propagate": False},
+        "django.request": {
+            "handlers": ["console"],
+            "level": "ERROR",
+            "propagate": False,
+        },
         "apps": {"handlers": ["console"], "level": "INFO", "propagate": False},
     },
 }

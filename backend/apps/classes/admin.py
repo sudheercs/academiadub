@@ -16,7 +16,7 @@ class EnrollmentInline(admin.TabularInline):
         if obj.pk:
             return format_html(
                 '<code style="font-size:1.1em;letter-spacing:2px;background:#1e293b;padding:2px 8px;border-radius:4px;">{}</code>',
-                obj.student_secret or "—"
+                obj.student_secret or "—",
             )
         return "—"
 
@@ -30,17 +30,34 @@ class AssignmentInline(admin.TabularInline):
 
 @admin.register(Classroom)
 class ClassroomAdmin(admin.ModelAdmin):
-    list_display = ("name", "instructor", "join_code", "is_active", "student_count", "created_at")
+    list_display = (
+        "name",
+        "instructor",
+        "join_code",
+        "is_active",
+        "student_count",
+        "created_at",
+    )
     list_filter = ("is_active",)
     search_fields = ("name", "instructor__email", "join_code")
     # join_code is editable — leave blank to auto-generate, or set a custom value
     readonly_fields = ("id", "created_at", "updated_at")
-    fields = ("id", "name", "description", "instructor", "join_code", "is_active", "created_at", "updated_at")
+    fields = (
+        "id",
+        "name",
+        "description",
+        "instructor",
+        "join_code",
+        "is_active",
+        "created_at",
+        "updated_at",
+    )
     inlines = [AssignmentInline, EnrollmentInline]
     actions = ["regenerate_join_code"]
 
     def student_count(self, obj):
         return obj.enrollments.filter(status="active").count()
+
     student_count.short_description = "Students"
 
     @admin.action(description="🔄 Regenerate join code for selected classrooms")
@@ -50,7 +67,11 @@ class ClassroomAdmin(admin.ModelAdmin):
             classroom.join_code = ""  # blank triggers auto-gen in save()
             classroom.save()
             count += 1
-        self.message_user(request, f"Regenerated join codes for {count} classroom(s).", messages.SUCCESS)
+        self.message_user(
+            request,
+            f"Regenerated join codes for {count} classroom(s).",
+            messages.SUCCESS,
+        )
 
     def save_model(self, request, obj, form, change):
         # If admin cleared the join_code field, auto-generate it
@@ -61,7 +82,13 @@ class ClassroomAdmin(admin.ModelAdmin):
 
 @admin.register(Enrollment)
 class EnrollmentAdmin(admin.ModelAdmin):
-    list_display = ("student", "classroom", "status", "student_secret_display", "enrolled_at")
+    list_display = (
+        "student",
+        "classroom",
+        "status",
+        "student_secret_display",
+        "enrolled_at",
+    )
     list_filter = ("status", "classroom")
     search_fields = ("student__email", "classroom__name")
     readonly_fields = ("enrolled_at", "student_secret")
@@ -71,7 +98,7 @@ class EnrollmentAdmin(admin.ModelAdmin):
     def student_secret_display(self, obj):
         return format_html(
             '<code style="font-size:1.1em;letter-spacing:2px;background:#1e293b;padding:2px 6px;border-radius:4px;">{}</code>',
-            obj.student_secret or "—"
+            obj.student_secret or "—",
         )
 
     @admin.action(description="🔑 Regenerate student secret PINs")
@@ -80,7 +107,11 @@ class EnrollmentAdmin(admin.ModelAdmin):
         for enrollment in queryset:
             enrollment.regenerate_secret()
             count += 1
-        self.message_user(request, f"Regenerated secret PINs for {count} enrollment(s).", messages.SUCCESS)
+        self.message_user(
+            request,
+            f"Regenerated secret PINs for {count} enrollment(s).",
+            messages.SUCCESS,
+        )
 
 
 @admin.register(Assignment)

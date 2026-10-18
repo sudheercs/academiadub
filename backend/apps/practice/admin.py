@@ -13,35 +13,52 @@ from .models import Attempt, Choice, Question, Quiz
 # ── Sample CSV rows (question-scoped — no quiz metadata) ────────────────────
 SAMPLE_ROWS = [
     [
-        "question_text", "question_type",
-        "choice_1", "choice_2", "choice_3", "choice_4",
-        "correct_choices", "explanation",
+        "question_text",
+        "question_type",
+        "choice_1",
+        "choice_2",
+        "choice_3",
+        "choice_4",
+        "correct_choices",
+        "explanation",
     ],
     [
         "What is the output of print(type([]))?",
         "mcq",
-        "<class 'list'>", "<class 'array'>", "<class 'tuple'>", "<class 'set'>",
+        "<class 'list'>",
+        "<class 'array'>",
+        "<class 'tuple'>",
+        "<class 'set'>",
         "1",
         "The built-in list type in Python is represented as <class 'list'>.",
     ],
     [
         "Which of the following are mutable in Python?",
         "multi",
-        "list", "tuple", "dict", "str",
+        "list",
+        "tuple",
+        "dict",
+        "str",
         "1,3",
         "Lists and dicts are mutable; tuples and strings are immutable.",
     ],
     [
         "What keyword is used to define a function in Python?",
         "mcq",
-        "func", "define", "def", "function",
+        "func",
+        "define",
+        "def",
+        "function",
         "3",
         "Python uses the 'def' keyword to define functions.",
     ],
     [
         "Which of these is NOT a Python built-in data type?",
         "mcq",
-        "list", "dict", "array", "tuple",
+        "list",
+        "dict",
+        "array",
+        "tuple",
         "3",
         "array is not a built-in type — it lives in the array module.",
     ],
@@ -78,9 +95,7 @@ def _parse_and_import(quiz: Quiz, file_bytes: bytes) -> dict:
             row_errors.append(f"Row {idx}: question_text is empty — skipped.")
             continue
 
-        raw_choices = [
-            (row.get(f"choice_{i}") or "").strip() for i in range(1, 5)
-        ]
+        raw_choices = [(row.get(f"choice_{i}") or "").strip() for i in range(1, 5)]
         choice_texts = [c for c in raw_choices if c]
         if len(choice_texts) < 2:
             row_errors.append(f"Row {idx}: need at least 2 choices — skipped.")
@@ -130,13 +145,18 @@ def _parse_and_import(quiz: Quiz, file_bytes: bytes) -> dict:
         "choices_created": choices_created,
         "row_errors": row_errors,
         "note": (
-            f"{questions_created} question(s) added to '{quiz.title}'. "
-            "Review the quiz and activate it when ready."
-        ) if questions_created else "No questions were imported.",
+            (
+                f"{questions_created} question(s) added to '{quiz.title}'. "
+                "Review the quiz and activate it when ready."
+            )
+            if questions_created
+            else "No questions were imported."
+        ),
     }
 
 
 # ── Inlines ─────────────────────────────────────────────────────────────────
+
 
 class ChoiceInline(admin.TabularInline):
     model = Choice
@@ -153,13 +173,22 @@ class QuestionInline(admin.StackedInline):
 
 # ── QuizAdmin ────────────────────────────────────────────────────────────────
 
+
 @admin.register(Quiz)
 class QuizAdmin(admin.ModelAdmin):
-    list_display  = ["title", "topic", "pass_mark", "time_limit_minutes", "is_active",
-                     "question_count", "created_at", "import_link"]
-    list_filter   = ["is_active", "topic__course__subject"]
+    list_display = [
+        "title",
+        "topic",
+        "pass_mark",
+        "time_limit_minutes",
+        "is_active",
+        "question_count",
+        "created_at",
+        "import_link",
+    ]
+    list_filter = ["is_active", "topic__course__subject"]
     search_fields = ["title", "topic__title"]
-    inlines       = [QuestionInline]
+    inlines = [QuestionInline]
     autocomplete_fields = ["topic"]
 
     # ── Custom column: question count ────────────────────────────────────
@@ -173,9 +202,9 @@ class QuizAdmin(admin.ModelAdmin):
         url = reverse("admin:practice_quiz_import_questions", args=[obj.pk])
         return format_html(
             '<a class="button" href="{}" style="'
-            'padding:3px 10px;background:#3182ce;color:#fff;'
+            "padding:3px 10px;background:#3182ce;color:#fff;"
             'border-radius:4px;font-size:.8rem;text-decoration:none;">'
-            '📥 Import CSV</a>',
+            "📥 Import CSV</a>",
             url,
         )
 
@@ -215,7 +244,9 @@ class QuizAdmin(admin.ModelAdmin):
             output = io.StringIO()
             csv.writer(output).writerows(SAMPLE_ROWS)
             resp = HttpResponse(output.getvalue(), content_type="text/csv")
-            resp["Content-Disposition"] = 'attachment; filename="quiz_questions_sample.csv"'
+            resp["Content-Disposition"] = (
+                'attachment; filename="quiz_questions_sample.csv"'
+            )
             return resp
 
         # ── POST  →  AJAX import ─────────────────────────────────────────
@@ -224,7 +255,9 @@ class QuizAdmin(admin.ModelAdmin):
             if not uploaded:
                 return JsonResponse({"error": "No file uploaded."}, status=400)
             if not uploaded.name.lower().endswith(".csv"):
-                return JsonResponse({"error": "Only .csv files are accepted."}, status=400)
+                return JsonResponse(
+                    {"error": "Only .csv files are accepted."}, status=400
+                )
 
             result = _parse_and_import(quiz, uploaded.read())
             if "error" in result:
@@ -247,17 +280,33 @@ class QuizAdmin(admin.ModelAdmin):
 
 # ── Other admin registrations ────────────────────────────────────────────────
 
+
 @admin.register(Question)
 class QuestionAdmin(admin.ModelAdmin):
-    list_display  = ["text", "quiz", "question_type", "order"]
-    list_filter   = ["question_type", "quiz"]
+    list_display = ["text", "quiz", "question_type", "order"]
+    list_filter = ["question_type", "quiz"]
     search_fields = ["text"]
-    inlines       = [ChoiceInline]
+    inlines = [ChoiceInline]
 
 
 @admin.register(Attempt)
 class AttemptAdmin(admin.ModelAdmin):
-    list_display     = ["user", "quiz", "status", "score_percent", "passed", "started_at", "submitted_at"]
-    list_filter      = ["status", "passed", "quiz"]
-    search_fields    = ["user__email", "quiz__title"]
-    readonly_fields  = ["status", "answers", "score_percent", "passed", "started_at", "submitted_at"]
+    list_display = [
+        "user",
+        "quiz",
+        "status",
+        "score_percent",
+        "passed",
+        "started_at",
+        "submitted_at",
+    ]
+    list_filter = ["status", "passed", "quiz"]
+    search_fields = ["user__email", "quiz__title"]
+    readonly_fields = [
+        "status",
+        "answers",
+        "score_percent",
+        "passed",
+        "started_at",
+        "submitted_at",
+    ]

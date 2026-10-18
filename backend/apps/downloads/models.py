@@ -1,9 +1,8 @@
 import uuid
 
+from apps.catalogue.models import Topic
 from django.conf import settings
 from django.db import models
-
-from apps.catalogue.models import Topic
 
 
 class Download(models.Model):
@@ -12,6 +11,7 @@ class Download(models.Model):
     In local dev, file is stored in MEDIA_ROOT.
     In production, django-storages routes it to S3 (ap-south-1).
     """
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     topic = models.ForeignKey(Topic, on_delete=models.CASCADE, related_name="downloads")
     title = models.CharField(max_length=200)
@@ -40,17 +40,26 @@ class Download(models.Model):
         if self.file:
             self.file_size_bytes = self.file.size
             import mimetypes
-            
+
             # Register common Office mimetypes that might be missing on some systems
-            mimetypes.add_type('application/vnd.openxmlformats-officedocument.presentationml.presentation', '.pptx')
-            mimetypes.add_type('application/vnd.openxmlformats-officedocument.wordprocessingml.document', '.docx')
-            mimetypes.add_type('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', '.xlsx')
-            
+            mimetypes.add_type(
+                "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+                ".pptx",
+            )
+            mimetypes.add_type(
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                ".docx",
+            )
+            mimetypes.add_type(
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                ".xlsx",
+            )
+
             mime_type, _ = mimetypes.guess_type(self.file.name)
             if mime_type:
                 self.mime_type = mime_type
             else:
-                self.mime_type = 'application/octet-stream' # Fallback
+                self.mime_type = "application/octet-stream"  # Fallback
         super().save(*args, **kwargs)
 
     def __str__(self):
@@ -59,7 +68,10 @@ class Download(models.Model):
 
 class DownloadLog(models.Model):
     """Audit trail: who downloaded what and when."""
-    download = models.ForeignKey(Download, on_delete=models.CASCADE, related_name="logs")
+
+    download = models.ForeignKey(
+        Download, on_delete=models.CASCADE, related_name="logs"
+    )
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,

@@ -61,7 +61,9 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         user = User.objects.create_user(password=password, **validated_data)
         Profile.objects.create(user=user, **profile_data)
 
-        student_role, _ = Role.objects.get_or_create(key="student", defaults={"name": "Student"})
+        student_role, _ = Role.objects.get_or_create(
+            key="student", defaults={"name": "Student"}
+        )
         ensure_role_permissions(student_role)
         UserRole.objects.create(user=user, role=student_role, scope_type="global")
 
@@ -74,8 +76,8 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         token = super().get_token(user)
 
         # Add custom claims
-        token['email'] = user.email
-        token['status'] = user.status
-        token['roles'] = list(user.roles.values_list('role__key', flat=True))
+        token["email"] = user.email
+        token["status"] = user.status
+        token["roles"] = list(user.roles.values_list("role__key", flat=True))
 
         return token

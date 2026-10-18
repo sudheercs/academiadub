@@ -2,10 +2,9 @@ import secrets
 import string
 import uuid
 
+from apps.catalogue.models import Topic
 from django.conf import settings
 from django.db import models
-
-from apps.catalogue.models import Topic
 
 
 def _generate_join_code(length=8):
@@ -25,6 +24,7 @@ class Classroom(models.Model):
     Students join via a unique join_code.
     join_code is auto-generated on first save but can be overridden/regenerated in admin.
     """
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=200)
     description = models.TextField(blank=True)
@@ -56,12 +56,15 @@ class Classroom(models.Model):
 
 class Enrollment(models.Model):
     """A student's membership in a class, with a personal secret for code-based login."""
+
     STATUS_CHOICES = [
         ("active", "Active"),
         ("dropped", "Dropped"),
         ("completed", "Completed"),
     ]
-    classroom = models.ForeignKey(Classroom, on_delete=models.CASCADE, related_name="enrollments")
+    classroom = models.ForeignKey(
+        Classroom, on_delete=models.CASCADE, related_name="enrollments"
+    )
     student = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
@@ -94,8 +97,13 @@ class Assignment(models.Model):
     """
     An instructor assigns a topic to a class with an optional deadline.
     """
-    classroom = models.ForeignKey(Classroom, on_delete=models.CASCADE, related_name="assignments")
-    topic = models.ForeignKey(Topic, on_delete=models.CASCADE, related_name="assignments")
+
+    classroom = models.ForeignKey(
+        Classroom, on_delete=models.CASCADE, related_name="assignments"
+    )
+    topic = models.ForeignKey(
+        Topic, on_delete=models.CASCADE, related_name="assignments"
+    )
     title = models.CharField(max_length=200, blank=True)  # Override title if needed
     due_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)

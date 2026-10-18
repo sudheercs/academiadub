@@ -10,6 +10,7 @@ class UserProgressViewSet(viewsets.ModelViewSet):
     CRUD for the current user's topic progress.
     POST /api/content/progress/ with { topic, state } to mark progress.
     """
+
     serializer_class = UserProgressSerializer
     permission_classes = [permissions.IsAuthenticated]
 
@@ -23,7 +24,9 @@ class UserProgressViewSet(viewsets.ModelViewSet):
 
     def perform_update(self, serializer):
         state = serializer.validated_data.get("state", serializer.instance.state)
-        completed_at = timezone.now() if state == "completed" else serializer.instance.completed_at
+        completed_at = (
+            timezone.now() if state == "completed" else serializer.instance.completed_at
+        )
         serializer.save(completed_at=completed_at)
 
 
@@ -31,6 +34,7 @@ class BookmarkViewSet(viewsets.ModelViewSet):
     """
     Manage the current user's bookmarks.
     """
+
     serializer_class = BookmarkSerializer
     permission_classes = [permissions.IsAuthenticated]
 

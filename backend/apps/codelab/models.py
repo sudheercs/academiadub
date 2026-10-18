@@ -21,7 +21,9 @@ def _total_used_bytes(user, exclude_snippet_id=None, exclude_file_id=None):
     return used_s + used_f
 
 
-def validate_user_storage(user, new_size_bytes, exclude_snippet_id=None, exclude_file_id=None):
+def validate_user_storage(
+    user, new_size_bytes, exclude_snippet_id=None, exclude_file_id=None
+):
     """
     Raise ValidationError if adding new_size_bytes would exceed the 100 MB quota.
     """
@@ -36,6 +38,7 @@ def validate_user_storage(user, new_size_bytes, exclude_snippet_id=None, exclude
 
 class CodeFolder(models.Model):
     """A personal folder a student uses to organise their saved code snippets and files."""
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -56,12 +59,13 @@ class CodeFolder(models.Model):
 
 class CodeSnippet(models.Model):
     """A saved Python/JS code file. Counts against the 100 MB quota."""
+
     LANGUAGE_CHOICES = [
-        ("python",     "Python"),
+        ("python", "Python"),
         ("javascript", "JavaScript"),
         ("typescript", "TypeScript"),
-        ("bash",       "Bash"),
-        ("text",       "Plain Text"),
+        ("bash", "Bash"),
+        ("text", "Plain Text"),
     ]
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -71,12 +75,17 @@ class CodeSnippet(models.Model):
         related_name="code_snippets",
     )
     folder = models.ForeignKey(
-        CodeFolder, on_delete=models.SET_NULL,
-        null=True, blank=True, related_name="snippets",
+        CodeFolder,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="snippets",
     )
-    title      = models.CharField(max_length=200, default="Untitled")
-    language   = models.CharField(max_length=20, choices=LANGUAGE_CHOICES, default="python")
-    code       = models.TextField()
+    title = models.CharField(max_length=200, default="Untitled")
+    language = models.CharField(
+        max_length=20, choices=LANGUAGE_CHOICES, default="python"
+    )
+    code = models.TextField()
     size_bytes = models.PositiveIntegerField(default=0, editable=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -105,6 +114,7 @@ class CodeFile(models.Model):
       (a) Running Python code that writes files → output_files are auto-saved here
       (b) Uploading a file directly via the My Code panel
     """
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -112,16 +122,21 @@ class CodeFile(models.Model):
         related_name="code_files",
     )
     folder = models.ForeignKey(
-        CodeFolder, on_delete=models.SET_NULL,
-        null=True, blank=True, related_name="files",
+        CodeFolder,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="files",
     )
-    filename   = models.CharField(max_length=255, help_text="Original filename, e.g. 'data.csv'")
-    mime_type  = models.CharField(max_length=100, default="text/plain")
+    filename = models.CharField(
+        max_length=255, help_text="Original filename, e.g. 'data.csv'"
+    )
+    mime_type = models.CharField(max_length=100, default="text/plain")
     # Base64-encoded raw bytes
     content_b64 = models.TextField(help_text="Base64-encoded file content")
-    size_bytes  = models.PositiveIntegerField(default=0, editable=False)
-    created_at  = models.DateTimeField(auto_now_add=True)
-    updated_at  = models.DateTimeField(auto_now=True)
+    size_bytes = models.PositiveIntegerField(default=0, editable=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         ordering = ["-updated_at"]
@@ -145,17 +160,30 @@ class CodeFile(models.Model):
         raw = text.encode("utf-8")
         b64 = base64.b64encode(raw).decode("ascii")
         return cls(
-            user=user, folder=folder, filename=filename,
-            mime_type=mime_type, content_b64=b64,
+            user=user,
+            folder=folder,
+            filename=filename,
+            mime_type=mime_type,
+            content_b64=b64,
         )
 
     @classmethod
-    def from_b64(cls, user, filename, b64_content: str, folder=None, mime_type="application/octet-stream"):
+    def from_b64(
+        cls,
+        user,
+        filename,
+        b64_content: str,
+        folder=None,
+        mime_type="application/octet-stream",
+    ):
         """Factory from raw base64 string (as returned by the code runner)."""
         raw = base64.b64decode(b64_content)
         return cls(
-            user=user, folder=folder, filename=filename,
-            mime_type=mime_type, content_b64=b64_content,
+            user=user,
+            folder=folder,
+            filename=filename,
+            mime_type=mime_type,
+            content_b64=b64_content,
             size_bytes=len(raw),
         )
 
