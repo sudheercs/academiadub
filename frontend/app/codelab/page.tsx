@@ -119,14 +119,14 @@ export default async function CodeLabPage({
             {lang === "python" ? (
               <>
                 <li>Use <code>print()</code> to output values</li>
-                <li>Standard library is available — try <code>import math</code> or <code>import json</code></li>
-                <li>Code runs in an isolated sandbox — max {5} seconds execution time</li>
+                <li>Python runs in your browser with Pyodide — try <code>import math</code> or <code>import json</code></li>
+                <li>Execution is limited to {5} seconds after the runtime loads</li>
               </>
             ) : (
               <>
                 <li>Use <code>console.log()</code> to output values</li>
                 <li>Modern ES2022 syntax is supported</li>
-                <li>Node.js built-ins are available — try <code>require(&apos;fs&apos;)</code></li>
+                <li>JavaScript runs in your browser; limited <code>fs</code> and <code>path</code> APIs are available</li>
               </>
             )}
           </ul>

@@ -81,7 +81,7 @@ services:
       - key: DEFAULT_FROM_EMAIL
         value: "noreply@academiadub.in"
 
-      # ── Code runner (disabled on Render — runs in Docker locally) ────────────
+      # ── Server-side runner (browser execution is used on the deployed site) ──
       - key: ENABLE_CODE_LAB
         value: "false"
 

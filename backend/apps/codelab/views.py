@@ -1,9 +1,8 @@
 import base64
-import http.client
 import json
 import logging
-import socket
 
+import requests
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import DatabaseError
@@ -31,25 +30,19 @@ from .serializers import (
 
 logger = logging.getLogger("apps")
 
+PISTON_API_URL = "https://emkc.org/api/v2/piston/execute"
 
-class UnixSocketHTTPConnection(http.client.HTTPConnection):
-    def __init__(self, socket_path, timeout):
-        super().__init__("localhost", timeout=timeout)
-        self.socket_path = socket_path
-
-    def connect(self):
-        self.sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-        self.sock.settimeout(self.timeout)
-        self.sock.connect(self.socket_path)
+PISTON_LANGUAGES = {
+    "python": {"language": "python", "version": "3.10.0"},
+    "javascript": {"language": "javascript", "version": "18.15.0"},
+}
 
 
 class CodeRunView(views.APIView):
     """
-    Proxy endpoint that forwards code execution requests to the isolated coderunner service.
+    Proxy endpoint that forwards code execution requests to the Piston API.
     - Open to all (unauthenticated users can try the playground)
     - Rate-limited: anon 20/min (IP-based), authenticated 60/min
-    - Now supports input_files (sent to runner) and output_files (returned from runner).
-      If authenticated, output_files are auto-saved to the user's library.
     """
 
     permission_classes = [permissions.AllowAny]
@@ -58,10 +51,8 @@ class CodeRunView(views.APIView):
     def post(self, request):
         language = request.data.get("language")
         code = request.data.get("code")
-        input_files = request.data.get("input_files", {})  # {filename: base64_content}
-        folder_id = request.data.get(
-            "folder_id"
-        )  # optional folder to save outputs into
+        input_files = request.data.get("input_files", {})
+        folder_id = request.data.get("folder_id")
 
         if not language or not code:
             return Response(
@@ -69,73 +60,63 @@ class CodeRunView(views.APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+        if language not in PISTON_LANGUAGES:
+            return Response(
+                {"error": f"Language '{language}' not supported. Allowed: python, javascript"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        lang_config = PISTON_LANGUAGES[language]
+        ext = ".py" if language == "python" else ".js"
+
+        # Build files list for Piston
+        files = [{"name": f"main{ext}", "content": code}]
+
+        # Add input files (decoded from base64)
+        for filename, b64_content in input_files.items():
+            try:
+                content = base64.b64decode(b64_content).decode("utf-8", errors="replace")
+                files.append({"name": filename, "content": content})
+            except Exception:
+                pass
+
         timeout = getattr(settings, "CODE_RUNNER_TIMEOUT_SECONDS", 5)
 
-        connection = UnixSocketHTTPConnection(settings.CODE_RUNNER_SOCKET, timeout + 1)
         try:
-            connection.request(
-                "POST",
-                "/run",
-                body=json.dumps(
-                    {
-                        "language": language,
-                        "code": code,
-                        "input_files": input_files,
-                    }
-                ),
-                headers={"Content-Type": "application/json"},
+            response = requests.post(
+                PISTON_API_URL,
+                json={
+                    "language": lang_config["language"],
+                    "version": lang_config["version"],
+                    "files": files,
+                },
+                timeout=timeout + 5,
             )
-            runner_response = connection.getresponse()
-            response_body = runner_response.read(12 * 1024 * 1024 + 1)
-            if len(response_body) > 12 * 1024 * 1024:
+
+            if response.status_code != 200:
                 return Response(
-                    {"error": "Code runner returned an oversized response."},
+                    {
+                        "error": "Code execution service error.",
+                        "stderr": response.text,
+                        "exit_code": 1,
+                    },
                     status=status.HTTP_502_BAD_GATEWAY,
                 )
-            runner_data = json.loads(response_body)
 
-            # Auto-save output files if authenticated
-            if request.user.is_authenticated and "output_files" in runner_data:
-                save_warnings = []
-                folder = None
-                if folder_id:
-                    folder = CodeFolder.objects.filter(
-                        id=folder_id, user=request.user
-                    ).first()
+            piston_data = response.json()
+            run_result = piston_data.get("run", {})
 
-                for filename, b64_content in runner_data["output_files"].items():
-                    try:
-                        # Try to update existing file in same folder with same name, or create new
-                        cf = CodeFile.objects.filter(
-                            user=request.user, folder=folder, filename=filename
-                        ).first()
-                        if cf:
-                            cf.content_b64 = b64_content
-                            cf.save()
-                        else:
-                            cf = CodeFile.from_b64(
-                                user=request.user,
-                                filename=filename,
-                                b64_content=b64_content,
-                                folder=folder,
-                            )
-                            cf.save()
-                    except (DatabaseError, ValidationError, ValueError) as e:
-                        logger.warning(
-                            f"Failed to auto-save output file {filename}: {e}"
-                        )
-                        save_warnings.append(
-                            {
-                                "filename": filename,
-                                "detail": "Could not save to your code library.",
-                            }
-                        )
-                if save_warnings:
-                    runner_data["save_warnings"] = save_warnings
+            runner_data = {
+                "stdout": run_result.get("stdout", ""),
+                "stderr": run_result.get("stderr", ""),
+                "exit_code": run_result.get("code", 1),
+                "runtime_ms": 0,
+                "output_files": {},
+            }
 
-            return Response(runner_data, status=runner_response.status)
+            return Response(runner_data, status=status.HTTP_200_OK)
 
-        except TimeoutError:
+        except requests.Timeout:
             return Response(
                 {
                     "error": "Code runner timed out.",
@@ -144,7 +125,7 @@ class CodeRunView(views.APIView):
                 },
                 status=status.HTTP_504_GATEWAY_TIMEOUT,
             )
-        except (OSError, http.client.HTTPException, json.JSONDecodeError) as e:
+        except Exception as e:
             return Response(
                 {
                     "error": f"Failed to contact code runner: {e!s}",
@@ -153,8 +134,7 @@ class CodeRunView(views.APIView):
                 },
                 status=status.HTTP_502_BAD_GATEWAY,
             )
-        finally:
-            connection.close()
+
 
 
 # ── Code Storage ──────────────────────────────────────────────────────────────

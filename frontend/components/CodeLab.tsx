@@ -1,8 +1,21 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { apiFetch } from "@/lib/api";
 import styles from "./CodeLab.module.css";
+
+interface BrowserRunData {
+  stdout: string;
+  stderr: string;
+  exit_code: number;
+  output_files: Record<string, string>;
+}
+
+interface WorkerMessage {
+  type: "ready" | "result" | "error";
+  data?: BrowserRunData;
+  error?: string;
+}
 
 interface CodeLabProps {
   initialCode: string;
@@ -13,11 +26,131 @@ interface CodeLabProps {
 interface CodeFolder { id: string; name: string; }
 interface SaveState { title: string; folderId: string | null; }
 
+function runInBrowser(
+  language: string,
+  code: string,
+  inputFiles: Record<string, string>,
+  onReady: () => void,
+  onWorkerChange: (worker: Worker | null) => void,
+): Promise<BrowserRunData> {
+  return new Promise((resolve, reject) => {
+    const worker = new Worker("/workers/codelab.worker.js");
+    onWorkerChange(worker);
+    let executionTimer: ReturnType<typeof setTimeout> | undefined;
+    const startupTimer = setTimeout(() => {
+      finish();
+      reject(new Error("The browser runner took too long to initialize. Please retry."));
+    }, 60_000);
+
+    const finish = () => {
+      clearTimeout(startupTimer);
+      if (executionTimer) clearTimeout(executionTimer);
+      worker.terminate();
+      onWorkerChange(null);
+    };
+
+    worker.onmessage = (event: MessageEvent<WorkerMessage>) => {
+      const message = event.data;
+      if (message.type === "ready") {
+        clearTimeout(startupTimer);
+        onReady();
+        executionTimer = setTimeout(() => {
+          finish();
+          resolve({
+            stdout: "",
+            stderr: "Execution timed out after 5 seconds.",
+            exit_code: 124,
+            output_files: {},
+          });
+        }, 5_000);
+        return;
+      }
+
+      finish();
+      if (message.type === "error") {
+        reject(new Error(message.error || "The browser runner failed."));
+      } else if (message.data) {
+        resolve(message.data);
+      } else {
+        reject(new Error("The browser runner returned an invalid response."));
+      }
+    };
+
+    worker.onerror = (event) => {
+      finish();
+      reject(new Error(event.message || "The browser runner could not be started."));
+    };
+
+    worker.postMessage({
+      language,
+      code,
+      input_files: inputFiles,
+    });
+  });
+}
+
+async function saveOutputFiles(
+  apiBase: string,
+  folderId: string | null,
+  outputFiles: Record<string, string>,
+): Promise<string[]> {
+  const warnings: string[] = [];
+  const query = new URLSearchParams({ folder: folderId || "none" });
+  const existingByName = new Map<string, string>();
+
+  try {
+    let url: string | null = `${apiBase}/api/codelab/files/?${query}`;
+    while (url) {
+      const response = await apiFetch(url, {});
+      if (!response.ok) throw new Error(`Could not load saved files (${response.status}).`);
+      const page = await response.json();
+      for (const file of page.results || page) {
+        existingByName.set(file.filename, file.id);
+      }
+      url = page.next || null;
+    }
+  } catch (error) {
+    return Object.keys(outputFiles).map(
+      (name) => `${name}: ${error instanceof Error ? error.message : "Could not load saved files."}`,
+    );
+  }
+
+  for (const [filename, content_b64] of Object.entries(outputFiles)) {
+    const existingId = existingByName.get(filename);
+    try {
+      const response = await apiFetch(
+        existingId
+          ? `${apiBase}/api/codelab/files/${existingId}/`
+          : `${apiBase}/api/codelab/files/`,
+        {
+          method: existingId ? "PATCH" : "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            filename,
+            content_b64,
+            folder: folderId,
+            mime_type: "application/octet-stream",
+          }),
+        },
+      );
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        warnings.push(`${filename}: ${data.detail || "Could not save to your code library."}`);
+      }
+    } catch {
+      warnings.push(`${filename}: Could not save to your code library.`);
+    }
+  }
+
+  return warnings;
+}
+
 export default function CodeLab({ initialCode, language, isAuthenticated = false }: CodeLabProps) {
   const [code,       setCode]       = useState(initialCode);
   const [output,     setOutput]     = useState("");
   const [isRunning,  setIsRunning]  = useState(false);
   const [hasError,   setHasError]   = useState(false);
+  const activeWorker = useRef<Worker | null>(null);
 
   // Save panel state
   const [showSave,   setShowSave]   = useState(false);
@@ -49,6 +182,8 @@ export default function CodeLab({ initialCode, language, isAuthenticated = false
       .catch(() => {});
   }, [showSave, isAuthenticated, apiBase]);
 
+  useEffect(() => () => activeWorker.current?.terminate(), []);
+
   const handleAddInputFile = () => {
     if (!newFileName.trim()) return;
     // convert text to base64 for the API
@@ -68,34 +203,38 @@ export default function CodeLab({ initialCode, language, isAuthenticated = false
   // ── Run code ────────────────────────────────────────────────────────────────
   const handleRun = async () => {
     setIsRunning(true);
-    setOutput("Running...");
+    setOutput(language === "python" ? "Loading Python runtime…" : "Starting JavaScript runner…");
     setHasError(false);
     setOutputFiles({});
     try {
-      const res = await apiFetch(`${apiBase}/api/codelab/run/`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json",  },
-        body: JSON.stringify({ language, code, input_files: inputFiles, folder_id: saveState.folderId }),
-      });
-      const data = await res.json();
-      if (!res.ok || data.exit_code !== 0) {
+      const data = await runInBrowser(
+        language,
+        code,
+        inputFiles,
+        () => setOutput("Running…"),
+        (worker) => { activeWorker.current = worker; },
+      );
+      if (data.exit_code !== 0) {
         setHasError(true);
-        setOutput(data.stderr || data.stdout || data.error || "Error occurred");
+        setOutput(data.stderr || data.stdout || "Error occurred");
       } else {
-        const warnings = (data.save_warnings || [])
-          .map((warning: { filename: string; detail: string }) => `${warning.filename}: ${warning.detail}`)
-          .join("\n");
+        setOutputFiles(data.output_files);
+        const warnings = isAuthenticated && Object.keys(data.output_files).length > 0
+          ? await saveOutputFiles(apiBase, saveState.folderId, data.output_files)
+          : [];
         setOutput(
-          [data.stdout || "✓ Success (no output)", warnings].filter(Boolean).join("\n\n"),
+          [
+            data.stdout || "✓ Success (no output)",
+            data.stderr,
+            warnings.length ? `Some files could not be saved:\n${warnings.join("\n")}` : "",
+          ].filter(Boolean).join("\n\n"),
         );
-        if (data.output_files) {
-          setOutputFiles(data.output_files);
-        }
       }
-    } catch {
+    } catch (error) {
       setHasError(true);
-      setOutput("Failed to connect to the runner.");
+      setOutput(error instanceof Error ? error.message : "The browser runner failed.");
     } finally {
+      activeWorker.current = null;
       setIsRunning(false);
     }
   };
