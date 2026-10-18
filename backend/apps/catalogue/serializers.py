@@ -1,6 +1,8 @@
-from rest_framework import serializers
 from urllib.parse import urlparse
-from .models import Subject, Course, Topic, TopicVersion
+
+from rest_framework import serializers
+
+from .models import Course, Subject, Topic, TopicVersion
 
 
 class SubjectSerializer(serializers.ModelSerializer):

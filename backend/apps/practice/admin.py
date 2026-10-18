@@ -1,14 +1,14 @@
 import csv
 import io
 
-from django.contrib import admin, messages
+from django.contrib import admin
 from django.http import HttpResponse, JsonResponse
-from django.shortcuts import get_object_or_404, redirect
+from django.shortcuts import get_object_or_404
 from django.template.response import TemplateResponse
 from django.urls import path, reverse
 from django.utils.html import format_html
 
-from .models import Quiz, Question, Choice, Attempt
+from .models import Attempt, Choice, Question, Quiz
 
 # ── Sample CSV rows (question-scoped — no quiz metadata) ────────────────────
 SAMPLE_ROWS = [

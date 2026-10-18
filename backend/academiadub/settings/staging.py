@@ -1,5 +1,5 @@
 """Staging settings — mirrors production, less strict secrets."""
-from .base import *  # noqa: F401, F403
+from .base import *
 
 DEBUG = False
 

@@ -1,6 +1,5 @@
 from django.db import migrations
 
-
 ROLE_PERMISSIONS = {
     "student": ["topic:read"],
     "editor": ["topic:read", "topic:manage"],

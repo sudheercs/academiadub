@@ -1,9 +1,8 @@
 import base64
-import mimetypes
 
 from rest_framework import serializers
 
-from .models import CodeFolder, CodeSnippet, CodeFile, MAX_STORAGE_BYTES
+from .models import CodeFile, CodeFolder, CodeSnippet
 
 
 class CodeFolderSerializer(serializers.ModelSerializer):

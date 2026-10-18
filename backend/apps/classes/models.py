@@ -1,8 +1,10 @@
-import uuid
 import secrets
 import string
-from django.db import models
+import uuid
+
 from django.conf import settings
+from django.db import models
+
 from apps.catalogue.models import Topic
 
 

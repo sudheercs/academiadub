@@ -2,12 +2,12 @@
 Phase 7 — Security & API tests for the identity app.
 Covers: registration, login throttle, JWT tokens, current-user endpoint.
 """
-from django.urls import reverse
-from rest_framework.test import APITestCase, APIClient
-from rest_framework import status
 from django.contrib.auth import get_user_model
 from django.core.cache import cache
 from django.test import Client, TestCase
+from django.urls import reverse
+from rest_framework import status
+from rest_framework.test import APITestCase
 
 User = get_user_model()
 

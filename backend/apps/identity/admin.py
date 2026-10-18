@@ -1,7 +1,8 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.utils.translation import gettext_lazy as _
-from .models import User, Profile, Role, Permission, UserRole, Consent
+
+from .models import Consent, Permission, Profile, Role, User, UserRole
 
 
 @admin.register(User)

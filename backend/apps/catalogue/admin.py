@@ -1,8 +1,9 @@
 import json
+
 from django import forms
 from django.contrib import admin
-from .models import Subject, Course, Topic, TopicVersion, TopicVersionEvent
 
+from .models import Course, Subject, Topic, TopicVersion, TopicVersionEvent
 
 BLOCKS_PLACEHOLDER = json.dumps([
     {"type": "paragraph", "content": "Write your introduction here. **Bold** and *italic* supported."},

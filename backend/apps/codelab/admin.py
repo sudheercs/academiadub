@@ -1,5 +1,6 @@
 from django.contrib import admin
-from .models import CodeFolder, CodeSnippet, CodeFile
+
+from .models import CodeFile, CodeFolder, CodeSnippet
 
 
 @admin.register(CodeFolder)

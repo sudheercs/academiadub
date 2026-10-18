@@ -1,5 +1,5 @@
-from django.db import migrations, models
 import django.db.models.deletion
+from django.db import migrations, models
 
 
 def migrate_existing_topics_to_default_courses(apps, schema_editor):

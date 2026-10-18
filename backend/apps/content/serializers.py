@@ -1,6 +1,6 @@
 from rest_framework import serializers
-from .models import UserProgress, Bookmark
-from apps.catalogue.models import Topic
+
+from .models import Bookmark, UserProgress
 
 
 class UserProgressSerializer(serializers.ModelSerializer):

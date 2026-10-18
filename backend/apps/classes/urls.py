@@ -1,7 +1,13 @@
-from django.urls import path, include
-from rest_framework_nested import routers
+from django.urls import include, path
 from rest_framework.routers import DefaultRouter
-from .views import ClassroomViewSet, AssignmentViewSet, JoinByCodeView, ClassCodeLoginView
+from rest_framework_nested import routers
+
+from .views import (
+    AssignmentViewSet,
+    ClassCodeLoginView,
+    ClassroomViewSet,
+    JoinByCodeView,
+)
 
 router = DefaultRouter()
 router.register("classrooms", ClassroomViewSet, basename="classroom")

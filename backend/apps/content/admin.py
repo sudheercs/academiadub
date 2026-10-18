@@ -1,5 +1,6 @@
 from django.contrib import admin
-from .models import UserProgress, Bookmark
+
+from .models import Bookmark, UserProgress
 
 
 @admin.register(UserProgress)

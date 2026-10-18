@@ -1,13 +1,18 @@
 import os
+
 import django
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "academiadub.settings.local")
 django.setup()
 
+import random
+import string
+from datetime import UTC
+
 from django.contrib.auth import get_user_model
-from apps.classes.models import Classroom, Enrollment, Assignment
+
 from apps.catalogue.models import Topic
-import random, string
+from apps.classes.models import Assignment, Classroom, Enrollment
 
 User = get_user_model()
 
@@ -57,8 +62,8 @@ def seed():
     print(f"  Enrolled {student.email} in {bootcamp.name}")
 
     # Assign all published topics
-    from datetime import datetime, timedelta, timezone
-    now = datetime.now(timezone.utc)
+    from datetime import datetime, timedelta
+    now = datetime.now(UTC)
 
     for i, topic in enumerate(topics[:3]):
         Assignment.objects.create(

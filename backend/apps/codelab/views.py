@@ -1,25 +1,32 @@
-import logging
 import base64
 import http.client
 import json
+import logging
 import socket
+
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import DatabaseError
-from django.db.models import Sum
-from rest_framework import views, viewsets, permissions, status
+from rest_framework import permissions, status, views, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
+
 from academiadub.throttles import CodeRunRateThrottle
-from .models import CodeFolder, CodeSnippet, CodeFile, MAX_STORAGE_BYTES, _total_used_bytes
+
+from .models import (
+    MAX_STORAGE_BYTES,
+    CodeFile,
+    CodeFolder,
+    CodeSnippet,
+    _total_used_bytes,
+)
 from .serializers import (
-    CodeFolderSerializer,
-    CodeSnippetListSerializer,
-    CodeSnippetDetailSerializer,
-    CodeFileListSerializer,
     CodeFileDetailSerializer,
+    CodeFileListSerializer,
     CodeFileUploadSerializer,
-    StorageUsageSerializer,
+    CodeFolderSerializer,
+    CodeSnippetDetailSerializer,
+    CodeSnippetListSerializer,
 )
 
 logger = logging.getLogger("apps")
@@ -112,14 +119,14 @@ class CodeRunView(views.APIView):
 
             return Response(runner_data, status=runner_response.status)
 
-        except (socket.timeout, TimeoutError):
+        except TimeoutError:
             return Response(
                 {"error": "Code runner timed out.", "stderr": "Execution timed out.", "exit_code": 124},
                 status=status.HTTP_504_GATEWAY_TIMEOUT,
             )
         except (OSError, http.client.HTTPException, json.JSONDecodeError) as e:
             return Response(
-                {"error": f"Failed to contact code runner: {str(e)}", "stderr": "Internal runner error.", "exit_code": 1},
+                {"error": f"Failed to contact code runner: {e!s}", "stderr": "Internal runner error.", "exit_code": 1},
                 status=status.HTTP_502_BAD_GATEWAY,
             )
         finally:

@@ -1,8 +1,9 @@
-import uuid
 import base64
-from django.db import models
+import uuid
+
 from django.conf import settings
 from django.core.exceptions import ValidationError
+from django.db import models
 
 MAX_STORAGE_BYTES = 100 * 1024 * 1024  # 100 MB per user
 

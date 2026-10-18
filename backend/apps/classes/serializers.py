@@ -1,8 +1,11 @@
 import random
 import string
+
 from rest_framework import serializers
-from .models import Classroom, Enrollment, Assignment
+
 from apps.catalogue.serializers import TopicListSerializer
+
+from .models import Assignment, Classroom, Enrollment
 
 
 def generate_join_code(length=8):

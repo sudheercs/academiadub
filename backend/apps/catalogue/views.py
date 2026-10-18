@@ -11,13 +11,14 @@ from apps.identity.permissions import (
     RequireTopicPublishPermission,
     subject_scope_ids,
 )
+
 from .models import Course, Subject, Topic, TopicVersion, TopicVersionEvent
 from .serializers import (
-    SubjectSerializer,
-    CourseListSerializer,
     CourseDetailSerializer,
-    TopicListSerializer,
+    CourseListSerializer,
+    SubjectSerializer,
     TopicDetailSerializer,
+    TopicListSerializer,
     TopicVersionSerializer,
 )
 

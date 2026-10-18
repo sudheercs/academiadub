@@ -1,10 +1,12 @@
 import mimetypes
+
 # pyrefly: ignore [missing-import]
 from django.http import FileResponse, Http404
 from django.utils.encoding import smart_str
-from rest_framework import viewsets, permissions, status
+from rest_framework import permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
+
 from .models import Download, DownloadLog
 from .serializers import DownloadSerializer, DownloadUploadSerializer
 

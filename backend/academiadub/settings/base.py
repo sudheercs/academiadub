@@ -5,7 +5,8 @@ Do NOT use this file directly — import from local.py / staging.py / production
 
 import os
 from pathlib import Path
-from decouple import config, Csv
+
+from decouple import Csv, config
 from django.core.exceptions import ImproperlyConfigured
 
 

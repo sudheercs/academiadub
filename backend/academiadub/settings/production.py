@@ -6,7 +6,7 @@ Environment variables required on Render:
   DEFAULT_FROM_EMAIL, EMAIL_HOST, EMAIL_HOST_USER, EMAIL_HOST_PASSWORD,
   AUTH_COOKIE_DOMAIN
 """
-from .base import *  # noqa: F401, F403
+from .base import *
 
 DEBUG = False
 
@@ -28,8 +28,9 @@ SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 # DATABASE_URL is injected by Render from the env var.
 # Supabase requires SSL — append ?sslmode=require if not already in the URL.
 
-import dj_database_url as _dj  # noqa: E402
-import os as _os  # noqa: E402
+import os as _os
+
+import dj_database_url as _dj
 
 _db_url = _os.getenv("DATABASE_URL", "")
 if _db_url and "sslmode" not in _db_url:

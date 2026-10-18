@@ -2,13 +2,14 @@
 Phase 7 — Tests for the classes app.
 Covers: classroom CRUD, join by code, enrollment, analytics endpoint.
 """
-from django.urls import reverse
-from rest_framework.test import APITestCase
-from rest_framework import status
+import random
+import string
+
 from django.contrib.auth import get_user_model
-from apps.classes.models import Classroom, Enrollment, Assignment
-from apps.catalogue.models import Subject, Topic
-import random, string
+from rest_framework import status
+from rest_framework.test import APITestCase
+
+from apps.classes.models import Classroom, Enrollment
 
 User = get_user_model()
 

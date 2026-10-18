@@ -2,13 +2,13 @@
 Phase 7 — Tests for the downloads app.
 Covers: listing files, access control by level, audit log creation.
 """
-from django.urls import reverse
-from rest_framework.test import APITestCase
-from rest_framework import status
 from django.contrib.auth import get_user_model
 from django.core.files.base import ContentFile
+from rest_framework import status
+from rest_framework.test import APITestCase
+
 from apps.catalogue.models import Subject, Topic
-from apps.downloads.models import Download, DownloadLog
+from apps.downloads.models import Download
 
 User = get_user_model()
 

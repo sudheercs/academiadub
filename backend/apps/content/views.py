@@ -1,10 +1,8 @@
-from rest_framework import viewsets, permissions, status
-from rest_framework.decorators import action
-from rest_framework.response import Response
 from django.utils import timezone
-from .models import UserProgress, Bookmark
-from .serializers import UserProgressSerializer, BookmarkSerializer
-from apps.catalogue.models import Topic
+from rest_framework import permissions, viewsets
+
+from .models import Bookmark, UserProgress
+from .serializers import BookmarkSerializer, UserProgressSerializer
 
 
 class UserProgressViewSet(viewsets.ModelViewSet):

@@ -1,6 +1,7 @@
 from django.contrib import admin, messages
 from django.utils.html import format_html
-from .models import Classroom, Enrollment, Assignment
+
+from .models import Assignment, Classroom, Enrollment
 
 
 class EnrollmentInline(admin.TabularInline):
