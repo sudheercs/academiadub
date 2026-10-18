@@ -2,10 +2,9 @@ import secrets
 import string
 import uuid
 
+from apps.catalogue.models import Topic
 from django.conf import settings
 from django.db import models
-
-from apps.catalogue.models import Topic
 
 
 def _generate_join_code(length=8):

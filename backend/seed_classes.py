@@ -9,10 +9,9 @@ import random
 import string
 from datetime import UTC
 
-from django.contrib.auth import get_user_model
-
 from apps.catalogue.models import Topic
 from apps.classes.models import Assignment, Classroom, Enrollment
+from django.contrib.auth import get_user_model
 
 User = get_user_model()
 

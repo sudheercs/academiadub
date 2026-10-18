@@ -2,13 +2,8 @@ from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 from rest_framework_nested.routers import NestedDefaultRouter
 
-from .views import (
-                    CourseViewSet,
-                    EditorTopicVersionViewSet,
-                    GlobalSearchView,
-                    SubjectViewSet,
-                    TopicViewSet,
-)
+from .views import (CourseViewSet, EditorTopicVersionViewSet, GlobalSearchView,
+                    SubjectViewSet, TopicViewSet)
 
 router = DefaultRouter()
 router.register(r"subjects", SubjectViewSet, basename="subject")

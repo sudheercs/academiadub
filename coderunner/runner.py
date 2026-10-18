@@ -23,35 +23,36 @@ Response body (JSON):
                 Every regular file found in the working directory after execution
                 (excluding the script itself).  Capped at 20 files, 10 MB total.
 """
+
 import base64
 import binascii
+import grp
 import json
 import os
 import pwd
-import grp
 import resource
+import shutil
 import signal
 import socket
-import shutil
 import subprocess
 import tempfile
 import time
 from http.server import BaseHTTPRequestHandler
 from socketserver import UnixStreamServer
 
-ALLOWED_LANGUAGES  = [
+ALLOWED_LANGUAGES = [
     language.strip()
     for language in os.getenv("ALLOWED_LANGUAGES", "python,javascript").split(",")
     if language.strip()
 ]
 MAX_RUNTIME_SECONDS = int(os.getenv("MAX_RUNTIME_SECONDS", "5"))
-MAX_OUTPUT_FILES    = 20
-MAX_OUTPUT_BYTES    = 10 * 1024 * 1024   # 10 MB total output files cap
-MAX_REQUEST_BYTES   = 2 * 1024 * 1024
-MAX_CODE_BYTES      = 512 * 1024
-MAX_FILE_BYTES      = 1024 * 1024
-MAX_STDIO_BYTES     = 256 * 1024
-SOCKET_PATH         = os.getenv("CODE_RUNNER_SOCKET", "/run/coderunner/runner.sock")
+MAX_OUTPUT_FILES = 20
+MAX_OUTPUT_BYTES = 10 * 1024 * 1024  # 10 MB total output files cap
+MAX_REQUEST_BYTES = 2 * 1024 * 1024
+MAX_CODE_BYTES = 512 * 1024
+MAX_FILE_BYTES = 1024 * 1024
+MAX_STDIO_BYTES = 256 * 1024
+SOCKET_PATH = os.getenv("CODE_RUNNER_SOCKET", "/run/coderunner/runner.sock")
 
 
 def _collect_output_files(workdir: str, script_name: str) -> dict[str, str]:
@@ -72,7 +73,7 @@ def _collect_output_files(workdir: str, script_name: str) -> dict[str, str]:
                 break
 
             fpath = os.path.join(root, fname)
-            rel   = os.path.relpath(fpath, workdir)
+            rel = os.path.relpath(fpath, workdir)
 
             # Skip the script file itself
             if rel == script_name:
@@ -83,13 +84,13 @@ def _collect_output_files(workdir: str, script_name: str) -> dict[str, str]:
                     continue
                 size = os.path.getsize(fpath)
                 if total_bytes + size > MAX_OUTPUT_BYTES:
-                    continue   # Skip oversized files silently
+                    continue  # Skip oversized files silently
                 with open(fpath, "rb") as f:
                     raw = f.read()
                 collected[rel] = base64.b64encode(raw).decode("ascii")
                 total_bytes += size
             except OSError:
-                pass   # Ignore unreadable files
+                pass  # Ignore unreadable files
 
     return collected
 
@@ -119,27 +120,30 @@ class RunnerHandler(BaseHTTPRequestHandler):
             self._respond(400, {"error": "Request body must be a JSON object."})
             return
 
-        language    = body.get("language", "")
-        code        = body.get("code", "")
-        input_files = body.get("input_files", {})   # {filename: base64_content}
+        language = body.get("language", "")
+        code = body.get("code", "")
+        input_files = body.get("input_files", {})  # {filename: base64_content}
 
         if language not in ALLOWED_LANGUAGES:
-            self._respond(400, {
-                "error": f"Language '{language}' not supported. Allowed: {ALLOWED_LANGUAGES}"
-            })
+            self._respond(
+                400,
+                {
+                    "error": f"Language '{language}' not supported. Allowed: {ALLOWED_LANGUAGES}"
+                },
+            )
             return
         if not isinstance(code, str) or len(code.encode("utf-8")) > MAX_CODE_BYTES:
             self._respond(413, {"error": "Code is missing or exceeds the size limit."})
             return
         if not isinstance(input_files, dict) or len(input_files) > MAX_OUTPUT_FILES:
-            self._respond(400, {"error": "input_files must be an object with at most 20 files."})
+            self._respond(
+                400, {"error": "input_files must be an object with at most 20 files."}
+            )
             return
 
         ext = ".py" if language == "python" else ".js"
         cmd_prefix = (
-            ["python"]
-            if language == "python"
-            else ["node", "--max-old-space-size=128"]
+            ["python"] if language == "python" else ["node", "--max-old-space-size=128"]
         )
         script_name = f"__student_code{ext}"
 
@@ -159,7 +163,10 @@ class RunnerHandler(BaseHTTPRequestHandler):
                         raise ValueError("Invalid input filename or file content.")
                     raw = base64.b64decode(b64_content, validate=True)
                     total_input_bytes += len(raw)
-                    if len(raw) > MAX_FILE_BYTES or total_input_bytes > MAX_REQUEST_BYTES:
+                    if (
+                        len(raw) > MAX_FILE_BYTES
+                        or total_input_bytes > MAX_REQUEST_BYTES
+                    ):
                         raise ValueError("Input files exceed the size limit.")
                     with open(os.path.join(workdir, rel_path), "wb") as f:
                         f.write(raw)
@@ -210,23 +217,30 @@ class RunnerHandler(BaseHTTPRequestHandler):
                     pass
                 stdout_file.seek(0)
                 stderr_file.seek(0)
-                stdout = stdout_file.read(MAX_STDIO_BYTES).decode("utf-8", errors="replace")
-                stderr = stderr_file.read(MAX_STDIO_BYTES).decode("utf-8", errors="replace")
+                stdout = stdout_file.read(MAX_STDIO_BYTES).decode(
+                    "utf-8", errors="replace"
+                )
+                stderr = stderr_file.read(MAX_STDIO_BYTES).decode(
+                    "utf-8", errors="replace"
+                )
                 exit_code = process.returncode
 
-            runtime_ms   = int((time.time() - start_time) * 1000)
+            runtime_ms = int((time.time() - start_time) * 1000)
             output_files = _collect_output_files(workdir, script_name)
 
         finally:
             shutil.rmtree(workdir, ignore_errors=True)
 
-        self._respond(200, {
-            "stdout":       stdout,
-            "stderr":       stderr,
-            "exit_code":    exit_code,
-            "runtime_ms":   runtime_ms,
-            "output_files": output_files,   # {filename: base64}
-        })
+        self._respond(
+            200,
+            {
+                "stdout": stdout,
+                "stderr": stderr,
+                "exit_code": exit_code,
+                "runtime_ms": runtime_ms,
+                "output_files": output_files,  # {filename: base64}
+            },
+        )
 
     def _respond(self, status, data):
         body = json.dumps(data).encode()
@@ -259,5 +273,7 @@ if __name__ == "__main__":
         os.unlink(SOCKET_PATH)
     server = UnixStreamServer(SOCKET_PATH, RunnerHandler)
     os.chmod(SOCKET_PATH, 0o660)
-    os.chown(SOCKET_PATH, pwd.getpwnam("sandbox").pw_uid, grp.getgrnam("runner-api").gr_gid)
+    os.chown(
+        SOCKET_PATH, pwd.getpwnam("sandbox").pw_uid, grp.getgrnam("runner-api").gr_gid
+    )
     server.serve_forever()

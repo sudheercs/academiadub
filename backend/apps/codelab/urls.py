@@ -1,7 +1,8 @@
 from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 
-from .views import CodeFileViewSet, CodeFolderViewSet, CodeRunView, CodeSnippetViewSet
+from .views import (CodeFileViewSet, CodeFolderViewSet, CodeRunView,
+                    CodeSnippetViewSet)
 
 router = DefaultRouter()
 router.register(r"folders", CodeFolderViewSet, basename="code-folder")

@@ -1,9 +1,8 @@
 import uuid
 
+from apps.catalogue.models import Topic
 from django.conf import settings
 from django.db import models
-
-from apps.catalogue.models import Topic
 
 
 class Quiz(models.Model):

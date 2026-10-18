@@ -1,2 +1,5 @@
 [tool.ruff.lint]
-ignore = ["RUF012", "BLE001", "EXE001"]
+ignore = ["RUF012", "BLE001", "EXE001", "I001"]
+
+[tool.ruff]
+line-length = 88

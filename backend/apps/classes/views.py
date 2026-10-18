@@ -1,5 +1,11 @@
 import csv
 
+from academiadub.throttles import LoginRateThrottle
+from apps.content.models import UserProgress
+from apps.identity.permissions import (RequireClassAnalyticsPermission,
+                                       RequireClassCreatePermission,
+                                       RequireClassManagePermission)
+from apps.identity.views import set_auth_cookies
 from django.db.models import Q
 from django.http import HttpResponse
 from rest_framework import permissions, status, views, viewsets
@@ -9,21 +15,9 @@ from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from academiadub.throttles import LoginRateThrottle
-from apps.content.models import UserProgress
-from apps.identity.permissions import (
-    RequireClassAnalyticsPermission,
-    RequireClassCreatePermission,
-    RequireClassManagePermission,
-)
-from apps.identity.views import set_auth_cookies
-
 from .models import Assignment, Classroom, Enrollment
-from .serializers import (
-    AssignmentSerializer,
-    ClassroomDetailSerializer,
-    ClassroomSerializer,
-)
+from .serializers import (AssignmentSerializer, ClassroomDetailSerializer,
+                          ClassroomSerializer)
 
 
 class ClassroomViewSet(viewsets.ModelViewSet):

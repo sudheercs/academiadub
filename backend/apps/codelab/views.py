@@ -4,6 +4,7 @@ import json
 import logging
 import socket
 
+from academiadub.throttles import CodeRunRateThrottle
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import DatabaseError
@@ -11,23 +12,12 @@ from rest_framework import permissions, status, views, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
-from academiadub.throttles import CodeRunRateThrottle
-
-from .models import (
-    MAX_STORAGE_BYTES,
-    CodeFile,
-    CodeFolder,
-    CodeSnippet,
-    _total_used_bytes,
-)
-from .serializers import (
-    CodeFileDetailSerializer,
-    CodeFileListSerializer,
-    CodeFileUploadSerializer,
-    CodeFolderSerializer,
-    CodeSnippetDetailSerializer,
-    CodeSnippetListSerializer,
-)
+from .models import (MAX_STORAGE_BYTES, CodeFile, CodeFolder, CodeSnippet,
+                     _total_used_bytes)
+from .serializers import (CodeFileDetailSerializer, CodeFileListSerializer,
+                          CodeFileUploadSerializer, CodeFolderSerializer,
+                          CodeSnippetDetailSerializer,
+                          CodeSnippetListSerializer)
 
 logger = logging.getLogger("apps")
 

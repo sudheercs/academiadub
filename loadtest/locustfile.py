@@ -10,9 +10,10 @@ Usage:
 Targets (from plan.md §8):
   500 concurrent users, p95 API response < 400ms
 """
-from locust import HttpUser, task, between
+
 import random
 
+from locust import HttpUser, between, task
 
 SUBJECT_SLUGS = ["python", "react"]
 
@@ -23,6 +24,7 @@ FREE_TOPICS = [
 
 class StudentUser(HttpUser):
     """Simulates a logged-in student browsing and reading content."""
+
     wait_time = between(1, 4)  # Realistic think-time between requests
     token = None
 
@@ -43,7 +45,11 @@ class StudentUser(HttpUser):
 
     @task(5)
     def browse_subjects(self):
-        self.client.get("/api/catalogue/subjects/", headers=self.auth_headers(), name="/api/catalogue/subjects/")
+        self.client.get(
+            "/api/catalogue/subjects/",
+            headers=self.auth_headers(),
+            name="/api/catalogue/subjects/",
+        )
 
     @task(5)
     def list_topics(self):
@@ -70,6 +76,7 @@ class StudentUser(HttpUser):
 
 class AnonUser(HttpUser):
     """Simulates an anonymous visitor browsing public content."""
+
     wait_time = between(2, 6)
 
     @task(3)
