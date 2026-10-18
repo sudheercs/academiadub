@@ -6,9 +6,10 @@ from django.core.files.base import ContentFile
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "academiadub.settings.local")
 django.setup()
 
+from django.contrib.auth import get_user_model
+
 from apps.catalogue.models import Topic
 from apps.downloads.models import Download
-from django.contrib.auth import get_user_model
 
 User = get_user_model()
 

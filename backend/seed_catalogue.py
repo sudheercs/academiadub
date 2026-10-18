@@ -5,8 +5,9 @@ import django
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "academiadub.settings.local")
 django.setup()
 
-from apps.catalogue.models import Course, Subject, Topic, TopicVersion
 from django.contrib.auth import get_user_model
+
+from apps.catalogue.models import Course, Subject, Topic, TopicVersion
 
 User = get_user_model()
 

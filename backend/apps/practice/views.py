@@ -4,9 +4,13 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 
 from .models import Attempt, Quiz
-from .serializers import (AttemptResultSerializer, AttemptSaveSerializer,
-                          AttemptSerializer, QuizDetailSerializer,
-                          QuizListSerializer)
+from .serializers import (
+    AttemptResultSerializer,
+    AttemptSaveSerializer,
+    AttemptSerializer,
+    QuizDetailSerializer,
+    QuizListSerializer,
+)
 
 
 def _grade(quiz: Quiz, answers: dict) -> tuple[float, bool]:

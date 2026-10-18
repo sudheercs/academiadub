@@ -3,3 +3,6 @@ ignore = ["RUF012", "BLE001", "EXE001", "I001", "E402", "F403", "F405"]
 
 [tool.ruff]
 line-length = 88
+
+[tool.isort]
+profile = "black"
