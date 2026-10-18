@@ -1,4 +1,4 @@
-const PYODIDE_VERSION = "314.0.7";
+const PYODIDE_VERSION = "0.27.0";
 const PYODIDE_INDEX_URL = `https://cdn.jsdelivr.net/pyodide/v${PYODIDE_VERSION}/full/`;
 const WORKSPACE = "/home/pyodide";
 const MAX_CODE_BYTES = 512 * 1024;
