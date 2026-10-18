@@ -1,11 +1,8 @@
 import base64
-import json
 import logging
 
 import requests
 from django.conf import settings
-from django.core.exceptions import ValidationError
-from django.db import DatabaseError
 from rest_framework import permissions, status, views, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -52,7 +49,6 @@ class CodeRunView(views.APIView):
         language = request.data.get("language")
         code = request.data.get("code")
         input_files = request.data.get("input_files", {})
-        folder_id = request.data.get("folder_id")
 
         if not language or not code:
             return Response(
@@ -62,7 +58,9 @@ class CodeRunView(views.APIView):
 
         if language not in PISTON_LANGUAGES:
             return Response(
-                {"error": f"Language '{language}' not supported. Allowed: python, javascript"},
+                {
+                    "error": f"Language '{language}' not supported. Allowed: python, javascript"
+                },
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -75,10 +73,12 @@ class CodeRunView(views.APIView):
         # Add input files (decoded from base64)
         for filename, b64_content in input_files.items():
             try:
-                content = base64.b64decode(b64_content).decode("utf-8", errors="replace")
+                content = base64.b64decode(b64_content).decode(
+                    "utf-8", errors="replace"
+                )
                 files.append({"name": filename, "content": content})
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning(f"Failed to decode input file {filename}: {e}")
 
         timeout = getattr(settings, "CODE_RUNNER_TIMEOUT_SECONDS", 5)
 
@@ -134,7 +134,6 @@ class CodeRunView(views.APIView):
                 },
                 status=status.HTTP_502_BAD_GATEWAY,
             )
-
 
 
 # ── Code Storage ──────────────────────────────────────────────────────────────
