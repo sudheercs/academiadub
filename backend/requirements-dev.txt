@@ -2,7 +2,7 @@
 -r requirements.txt
 
 # Linting & formatting
-black==24.8.0
+black==26.10.1
 ruff==0.6.8
 isort==5.13.2
 pre-commit==3.8.0
