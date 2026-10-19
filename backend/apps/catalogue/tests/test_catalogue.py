@@ -195,6 +195,48 @@ class CatalogueTests(TestCase):
             self.assertFalse(form.is_valid())
             self.assertIn("state", form.errors)
 
+    def test_admin_can_approve_or_return_in_review_versions(self):
+        request = RequestFactory().get("/")
+        request.user = self.admin
+        version_admin = TopicVersionAdmin(TopicVersion, admin.site)
+        allowed_states = {"in_review", "approved", "draft"}
+
+        for version_no, next_state, expected_event in (
+            (1, "approved", "approved"),
+            (2, "draft", "returned"),
+        ):
+            version = TopicVersion.objects.create(
+                topic=self.topic,
+                version_no=version_no,
+                state="in_review",
+                blocks=[{"type": "markdown", "content": "Submitted content"}],
+            )
+            form_class = version_admin.get_form(request, version)
+            form = form_class(
+                data={
+                    "blocks": json.dumps(
+                        [{"type": "markdown", "content": "Submitted content"}]
+                    ),
+                    "state": next_state,
+                    "review_note": f"Review result {version_no}",
+                },
+                instance=version,
+            )
+
+            self.assertEqual(
+                {value for value, _label in form.fields["state"].choices},
+                allowed_states,
+            )
+            self.assertTrue(form.fields["blocks"].disabled)
+            self.assertTrue(form.is_valid(), form.errors)
+            updated_version = form.save(commit=False)
+            version_admin.save_model(request, updated_version, form, change=True)
+
+            version.refresh_from_db()
+            self.assertEqual(version.state, next_state)
+            self.assertEqual(version.review_note, f"Review result {version_no}")
+            self.assertEqual(version.events.get().action, expected_event)
+
     def test_topic_version_can_be_added_from_topic_admin_inline(self):
         request = RequestFactory().get("/")
         request.user = self.admin

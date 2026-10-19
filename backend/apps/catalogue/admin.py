@@ -77,9 +77,24 @@ class TopicVersionAdminForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        if self.instance.pk:
+            if self.instance.state == "draft":
+                allowed_states = {"draft", "in_review"}
+            elif self.instance.state == "in_review":
+                allowed_states = {"in_review", "approved", "draft"}
+            else:
+                allowed_states = {self.instance.state}
+            self.fields["state"].choices = [
+                choice
+                for choice in self.fields["state"].choices
+                if choice[0] in allowed_states
+            ]
         if self.instance.pk and self.instance.state != "draft":
             self.fields["blocks"].disabled = True
+        if self.instance.pk and self.instance.state not in {"draft", "in_review"}:
             self.fields["state"].disabled = True
+        if self.instance.pk and self.instance.state != "in_review":
+            self.fields["review_note"].disabled = True
 
     def clean_state(self):
         state = self.cleaned_data["state"]
@@ -88,13 +103,18 @@ class TopicVersionAdminForm(forms.ModelForm):
 
         current_state = self.instance.state
         if current_state == "draft":
-            if state not in {"draft", "in_review"}:
-                raise forms.ValidationError(
-                    "Draft versions can only remain drafts or be submitted for review."
-                )
+            allowed_states = {"draft", "in_review"}
+        elif current_state == "in_review":
+            allowed_states = {"in_review", "approved", "draft"}
         elif state != current_state:
             raise forms.ValidationError(
-                "Only draft versions can change status in the admin."
+                "Only draft and in-review versions can change status in the admin."
+            )
+        else:
+            return state
+        if state not in allowed_states:
+            raise forms.ValidationError(
+                "This status transition is not allowed in the admin."
             )
         return state
 
@@ -106,7 +126,6 @@ class TopicVersionInline(admin.StackedInline):
     readonly_fields = (
         "version_no",
         "author",
-        "review_note",
         "created_at",
         "updated_at",
     )
@@ -199,6 +218,10 @@ class TopicAdmin(admin.ModelAdmin):
                 (
                     "submitted"
                     if previous_state == "draft" and version.state == "in_review"
+                    else "approved"
+                    if previous_state == "in_review" and version.state == "approved"
+                    else "returned"
+                    if previous_state == "in_review" and version.state == "draft"
                     else "created" if is_new else "updated"
                 ),
             )
@@ -215,7 +238,6 @@ class TopicVersionAdmin(admin.ModelAdmin):
         "updated_at",
         "version_no",
         "author",
-        "review_note",
     )
     raw_id_fields = ("topic",)
 
@@ -227,7 +249,7 @@ class TopicVersionAdmin(admin.ModelAdmin):
     )
 
     def has_change_permission(self, request, obj=None):
-        if obj is not None and obj.state != "draft":
+        if obj is not None and obj.state not in {"draft", "in_review"}:
             return False
         return super().has_change_permission(request, obj)
 
@@ -235,8 +257,12 @@ class TopicVersionAdmin(admin.ModelAdmin):
         readonly_fields = super().get_readonly_fields(request, obj)
         if obj is not None:
             readonly_fields = (*readonly_fields, "topic")
-            if obj.state != "draft":
-                readonly_fields = (*readonly_fields, "blocks", "state")
+            if obj.state not in {"draft", "in_review"}:
+                readonly_fields = (*readonly_fields, "blocks", "state", "review_note")
+            elif obj.state == "in_review":
+                readonly_fields = (*readonly_fields, "blocks")
+            else:
+                readonly_fields = (*readonly_fields, "review_note")
         return readonly_fields
 
     def has_delete_permission(self, request, obj=None):
@@ -259,6 +285,10 @@ class TopicVersionAdmin(admin.ModelAdmin):
             (
                 "submitted"
                 if previous_state == "draft" and obj.state == "in_review"
+                else "approved"
+                if previous_state == "in_review" and obj.state == "approved"
+                else "returned"
+                if previous_state == "in_review" and obj.state == "draft"
                 else "updated" if change else "created"
             ),
         )
