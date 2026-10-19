@@ -90,7 +90,6 @@ class TopicInline(admin.TabularInline):
     extra = 0
     show_change_link = True
     fields = ("title", "slug", "difficulty", "access_level", "status", "order")
-    readonly_fields = ("status",)
     prepopulated_fields = {"slug": ("title",)}
 
 
@@ -130,7 +129,7 @@ class TopicAdmin(admin.ModelAdmin):
     search_fields = ("title", "slug")
     prepopulated_fields = {"slug": ("title",)}
     ordering = ("course", "order")
-    readonly_fields = ("created_at", "updated_at", "status", "current_version_id")
+    readonly_fields = ("created_at", "updated_at", "current_version_id")
     inlines = [TopicVersionInline]
 
     @admin.display(description="Subject", ordering="course__subject")

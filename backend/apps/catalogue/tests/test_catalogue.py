@@ -1,9 +1,11 @@
+from django.contrib import admin
 from django.contrib.auth import get_user_model
-from django.test import TestCase
+from django.test import RequestFactory, TestCase
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APIClient
 
+from apps.catalogue.admin import TopicAdmin, TopicInline
 from apps.catalogue.models import Course, Subject, Topic, TopicVersionEvent
 from apps.identity.models import Permission, Role, UserRole
 
@@ -85,6 +87,18 @@ class CatalogueTests(TestCase):
         self.assertEqual(response.data["results"][0]["slug"], "intro")
         self.assertEqual(response.data["results"][0]["course"]["slug"], "python-basics")
         self.assertEqual(response.data["results"][0]["subject"]["slug"], "python")
+
+    def test_topic_status_is_editable_in_admin_and_course_inline(self):
+        request = RequestFactory().get("/")
+        request.user = self.admin
+
+        topic_form = TopicAdmin(Topic, admin.site).get_form(request, self.topic)
+        inline_formset = TopicInline(Course, admin.site).get_formset(
+            request, self.course
+        )
+
+        self.assertIn("status", topic_form.base_fields)
+        self.assertIn("status", inline_formset.form.base_fields)
 
     def test_filter_topics_by_course(self):
         course2 = Course.objects.create(
