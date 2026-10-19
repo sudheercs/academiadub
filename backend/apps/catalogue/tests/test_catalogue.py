@@ -1,6 +1,7 @@
 import json
 
 from django.contrib import admin
+from django.contrib.messages.storage.fallback import FallbackStorage
 from django.contrib.auth import get_user_model
 from django.test import RequestFactory, TestCase
 from django.urls import reverse
@@ -236,6 +237,54 @@ class CatalogueTests(TestCase):
             self.assertEqual(version.state, next_state)
             self.assertEqual(version.review_note, f"Review result {version_no}")
             self.assertEqual(version.events.get().action, expected_event)
+
+    def test_admin_can_publish_approved_version(self):
+        request = RequestFactory().post("/")
+        request.user = self.admin
+        request.session = {}
+        request._messages = FallbackStorage(request)
+        previous_version = TopicVersion.objects.create(
+            topic=self.topic,
+            version_no=1,
+            state="published",
+            blocks=[{"type": "markdown", "content": "Previous content"}],
+        )
+        self.topic.current_version_id = previous_version.version_no
+        self.topic.save(update_fields=["current_version_id"])
+        approved_version = TopicVersion.objects.create(
+            topic=self.topic,
+            version_no=2,
+            state="approved",
+            blocks=[{"type": "markdown", "content": "Approved content"}],
+        )
+        version_admin = TopicVersionAdmin(TopicVersion, admin.site)
+        queryset = TopicVersion.objects.filter(pk=approved_version.pk)
+
+        self.assertIn("publish_selected", version_admin.get_actions(request))
+        version_admin.publish_selected(request, queryset)
+
+        previous_version.refresh_from_db()
+        approved_version.refresh_from_db()
+        self.topic.refresh_from_db()
+        self.assertEqual(previous_version.state, "archived")
+        self.assertEqual(approved_version.state, "published")
+        self.assertEqual(self.topic.current_version_id, 2)
+        self.assertEqual(self.topic.status, "published")
+        self.assertEqual(previous_version.events.get().action, "archived")
+        self.assertEqual(approved_version.events.get().action, "published")
+
+    def test_topic_publish_action_requires_publish_permission(self):
+        editor = User.objects.create_user(
+            email="editor@example.com"
+        )
+        editor.is_staff = True
+        editor.save(update_fields=["is_staff"])
+        self.assign_role(editor, "editor", ["topic:manage"], self.subject.id)
+        request = RequestFactory().get("/")
+        request.user = editor
+
+        version_admin = TopicVersionAdmin(TopicVersion, admin.site)
+        self.assertNotIn("publish_selected", version_admin.get_actions(request))
 
     def test_topic_version_can_be_added_from_topic_admin_inline(self):
         request = RequestFactory().get("/")

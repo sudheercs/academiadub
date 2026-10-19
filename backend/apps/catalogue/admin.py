@@ -2,7 +2,10 @@ import json
 
 from django import forms
 from django.contrib import admin
+from django.contrib import messages
+from django.db import transaction
 
+from apps.identity.permissions import subject_scope_ids
 from .models import Course, Subject, Topic, TopicVersion, TopicVersionEvent
 
 
@@ -230,6 +233,7 @@ class TopicAdmin(admin.ModelAdmin):
 
 @admin.register(TopicVersion)
 class TopicVersionAdmin(admin.ModelAdmin):
+    actions = ("publish_selected",)
     list_display = ("topic", "version_no", "state", "author", "created_at")
     list_filter = ("state",)
     search_fields = ("topic__title",)
@@ -267,6 +271,79 @@ class TopicVersionAdmin(admin.ModelAdmin):
 
     def has_delete_permission(self, request, obj=None):
         return False
+
+    def get_actions(self, request):
+        actions = super().get_actions(request)
+        if (
+            not request.user.has_permission("topic:publish")
+            and not subject_scope_ids(request.user, "topic:publish").exists()
+        ):
+            actions.pop("publish_selected", None)
+        return actions
+
+    @admin.action(description="Publish selected approved versions")
+    def publish_selected(self, request, queryset):
+        published_count = 0
+        unauthorized_count = 0
+        ineligible_count = 0
+
+        versions = queryset.order_by("topic_id", "version_no")
+        for selected_version in versions:
+            if not request.user.has_permission(
+                "topic:publish",
+                "subject",
+                selected_version.topic.course.subject_id,
+            ):
+                unauthorized_count += 1
+                continue
+
+            with transaction.atomic():
+                version = TopicVersion.objects.select_for_update().get(
+                    pk=selected_version.pk
+                )
+                if version.state != "approved":
+                    ineligible_count += 1
+                    continue
+
+                topic = Topic.objects.select_for_update().get(pk=version.topic_id)
+                previous_versions = list(
+                    topic.versions.select_for_update()
+                    .filter(state="published")
+                    .exclude(pk=version.pk)
+                )
+                for previous in previous_versions:
+                    previous.state = "archived"
+                    previous.save(update_fields=["state", "updated_at"])
+                    record_topic_version_event(previous, request.user, "archived")
+
+                version.state = "published"
+                version.save(update_fields=["state", "updated_at"])
+                topic.current_version_id = version.version_no
+                topic.status = "published"
+                topic.save(
+                    update_fields=["current_version_id", "status", "updated_at"]
+                )
+                record_topic_version_event(version, request.user, "published")
+                published_count += 1
+
+        if published_count:
+            self.message_user(
+                request,
+                f"Published {published_count} topic version(s).",
+                level=messages.SUCCESS,
+            )
+        if unauthorized_count:
+            self.message_user(
+                request,
+                f"Skipped {unauthorized_count} version(s) outside your publish scope.",
+                level=messages.ERROR,
+            )
+        if ineligible_count:
+            self.message_user(
+                request,
+                f"Skipped {ineligible_count} version(s) that are not approved.",
+                level=messages.WARNING,
+            )
 
     def save_model(self, request, obj, form, change):
         previous_state = (
