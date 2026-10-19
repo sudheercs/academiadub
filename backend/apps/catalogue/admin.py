@@ -5,6 +5,23 @@ from django.contrib import admin
 
 from .models import Course, Subject, Topic, TopicVersion, TopicVersionEvent
 
+
+def next_topic_version_no(topic):
+    latest_version_no = topic.versions.order_by("-version_no").values_list(
+        "version_no", flat=True
+    ).first()
+    return (latest_version_no or 0) + 1
+
+
+def record_topic_version_event(version, actor, action):
+    TopicVersionEvent.objects.create(
+        topic=version.topic,
+        version=version,
+        version_no=version.version_no,
+        actor=actor,
+        action=action,
+    )
+
 BLOCKS_PLACEHOLDER = json.dumps(
     [
         {
@@ -58,17 +75,21 @@ class TopicVersionAdminForm(forms.ModelForm):
         model = TopicVersion
         fields = "__all__"
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance.pk and self.instance.state != "draft":
+            self.fields["blocks"].disabled = True
+
 
 class TopicVersionInline(admin.StackedInline):
     model = TopicVersion
     form = TopicVersionAdminForm
-    extra = 0
+    extra = 1
     readonly_fields = (
         "version_no",
         "state",
         "author",
         "review_note",
-        "blocks",
         "created_at",
         "updated_at",
     )
@@ -136,6 +157,25 @@ class TopicAdmin(admin.ModelAdmin):
     def get_subject(self, obj):
         return obj.course.subject if obj.course else "-"
 
+    def save_formset(self, request, form, formset, change):
+        if formset.model is not TopicVersion:
+            return super().save_formset(request, form, formset, change)
+
+        versions = formset.save(commit=False)
+        for version in formset.deleted_objects:
+            version.delete()
+        for version in versions:
+            is_new = version._state.adding
+            if is_new:
+                version.version_no = next_topic_version_no(version.topic)
+                version.author = request.user
+                version.state = "draft"
+            version.save()
+            record_topic_version_event(
+                version, request.user, "created" if is_new else "updated"
+            )
+        formset.save_m2m()
+
 
 @admin.register(TopicVersion)
 class TopicVersionAdmin(admin.ModelAdmin):
@@ -143,14 +183,12 @@ class TopicVersionAdmin(admin.ModelAdmin):
     list_filter = ("state",)
     search_fields = ("topic__title",)
     readonly_fields = (
-        "topic",
         "created_at",
         "updated_at",
         "version_no",
         "author",
         "state",
         "review_note",
-        "blocks",
     )
     raw_id_fields = ("topic",)
 
@@ -161,14 +199,31 @@ class TopicVersionAdmin(admin.ModelAdmin):
         ("Timestamps", {"fields": ("created_at", "updated_at")}),
     )
 
-    def has_add_permission(self, request):
-        return False
-
     def has_change_permission(self, request, obj=None):
-        return bool(obj) and super().has_view_permission(request, obj)
+        if obj is not None and obj.state != "draft":
+            return False
+        return super().has_change_permission(request, obj)
+
+    def get_readonly_fields(self, request, obj=None):
+        readonly_fields = super().get_readonly_fields(request, obj)
+        if obj is not None:
+            readonly_fields = (*readonly_fields, "topic")
+            if obj.state != "draft":
+                readonly_fields = (*readonly_fields, "blocks")
+        return readonly_fields
 
     def has_delete_permission(self, request, obj=None):
         return False
+
+    def save_model(self, request, obj, form, change):
+        if not change:
+            obj.version_no = next_topic_version_no(obj.topic)
+            obj.author = request.user
+            obj.state = "draft"
+        super().save_model(request, obj, form, change)
+        record_topic_version_event(
+            obj, request.user, "updated" if change else "created"
+        )
 
 
 @admin.register(TopicVersionEvent)

@@ -1,3 +1,5 @@
+import json
+
 from django.contrib import admin
 from django.contrib.auth import get_user_model
 from django.test import RequestFactory, TestCase
@@ -5,8 +7,19 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APIClient
 
-from apps.catalogue.admin import TopicAdmin, TopicInline
-from apps.catalogue.models import Course, Subject, Topic, TopicVersionEvent
+from apps.catalogue.admin import (
+    TopicAdmin,
+    TopicInline,
+    TopicVersionAdmin,
+    TopicVersionInline,
+)
+from apps.catalogue.models import (
+    Course,
+    Subject,
+    Topic,
+    TopicVersion,
+    TopicVersionEvent,
+)
 from apps.identity.models import Permission, Role, UserRole
 
 User = get_user_model()
@@ -99,6 +112,84 @@ class CatalogueTests(TestCase):
 
         self.assertIn("status", topic_form.base_fields)
         self.assertIn("status", inline_formset.form.base_fields)
+
+    def test_topic_versions_can_be_created_and_draft_edited_in_admin(self):
+        request = RequestFactory().get("/")
+        request.user = self.admin
+        version_admin = TopicVersionAdmin(TopicVersion, admin.site)
+
+        self.assertTrue(version_admin.has_add_permission(request))
+        self.assertIn("blocks", version_admin.get_form(request).base_fields)
+
+        version = TopicVersion(
+            topic=self.topic,
+            blocks=[{"type": "markdown", "content": "Draft content"}],
+        )
+        version_admin.save_model(request, version, None, change=False)
+        self.assertEqual(version.version_no, 1)
+        self.assertEqual(version.author, self.admin)
+        self.assertEqual(version.state, "draft")
+        self.assertEqual(
+            version.events.get().action,
+            "created",
+        )
+
+        version.blocks = [{"type": "markdown", "content": "Updated draft"}]
+        version_admin.save_model(request, version, None, change=True)
+        self.assertEqual(
+            list(version.events.values_list("action", flat=True)),
+            ["created", "updated"],
+        )
+
+    def test_topic_version_can_be_added_from_topic_admin_inline(self):
+        request = RequestFactory().get("/")
+        request.user = self.admin
+        formset_class = TopicVersionInline(Topic, admin.site).get_formset(
+            request, self.topic
+        )
+        formset = formset_class(
+            data={
+                "versions-TOTAL_FORMS": "1",
+                "versions-INITIAL_FORMS": "0",
+                "versions-MIN_NUM_FORMS": "0",
+                "versions-MAX_NUM_FORMS": "1000",
+                "versions-0-blocks": json.dumps(
+                    [{"type": "markdown", "content": "Inline draft"}]
+                ),
+            },
+            instance=self.topic,
+            prefix="versions",
+        )
+        self.assertTrue(formset.is_valid(), formset.errors)
+
+        TopicAdmin(Topic, admin.site).save_formset(
+            request, None, formset, change=True
+        )
+
+        version = self.topic.versions.get()
+        self.assertEqual(version.version_no, 1)
+        self.assertEqual(version.author, self.admin)
+        self.assertEqual(version.state, "draft")
+        self.assertEqual(version.events.get().action, "created")
+
+    def test_published_topic_version_is_read_only_in_admin(self):
+        request = RequestFactory().get("/")
+        request.user = self.admin
+        version = TopicVersion.objects.create(
+            topic=self.topic,
+            version_no=1,
+            state="published",
+            blocks=[{"type": "markdown", "content": "Published content"}],
+        )
+        version_admin = TopicVersionAdmin(TopicVersion, admin.site)
+        inline_formset = TopicVersionInline(Topic, admin.site).get_formset(
+            request, self.topic
+        )
+        inline_form = inline_formset.form(instance=version)
+
+        self.assertFalse(version_admin.has_change_permission(request, version))
+        self.assertIn("blocks", version_admin.get_readonly_fields(request, version))
+        self.assertTrue(inline_form.fields["blocks"].disabled)
 
     def test_filter_topics_by_course(self):
         course2 = Course.objects.create(
