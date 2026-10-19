@@ -79,6 +79,24 @@ class TopicVersionAdminForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         if self.instance.pk and self.instance.state != "draft":
             self.fields["blocks"].disabled = True
+            self.fields["state"].disabled = True
+
+    def clean_state(self):
+        state = self.cleaned_data["state"]
+        if not self.instance.pk:
+            return state
+
+        current_state = self.instance.state
+        if current_state == "draft":
+            if state not in {"draft", "in_review"}:
+                raise forms.ValidationError(
+                    "Draft versions can only remain drafts or be submitted for review."
+                )
+        elif state != current_state:
+            raise forms.ValidationError(
+                "Only draft versions can change status in the admin."
+            )
+        return state
 
 
 class TopicVersionInline(admin.StackedInline):
@@ -87,7 +105,6 @@ class TopicVersionInline(admin.StackedInline):
     extra = 1
     readonly_fields = (
         "version_no",
-        "state",
         "author",
         "review_note",
         "created_at",
@@ -166,13 +183,24 @@ class TopicAdmin(admin.ModelAdmin):
             version.delete()
         for version in versions:
             is_new = version._state.adding
+            previous_state = (
+                TopicVersion.objects.values_list("state", flat=True).get(pk=version.pk)
+                if not is_new
+                else None
+            )
             if is_new:
                 version.version_no = next_topic_version_no(version.topic)
                 version.author = request.user
                 version.state = "draft"
             version.save()
             record_topic_version_event(
-                version, request.user, "created" if is_new else "updated"
+                version,
+                request.user,
+                (
+                    "submitted"
+                    if previous_state == "draft" and version.state == "in_review"
+                    else "created" if is_new else "updated"
+                ),
             )
         formset.save_m2m()
 
@@ -187,7 +215,6 @@ class TopicVersionAdmin(admin.ModelAdmin):
         "updated_at",
         "version_no",
         "author",
-        "state",
         "review_note",
     )
     raw_id_fields = ("topic",)
@@ -209,20 +236,31 @@ class TopicVersionAdmin(admin.ModelAdmin):
         if obj is not None:
             readonly_fields = (*readonly_fields, "topic")
             if obj.state != "draft":
-                readonly_fields = (*readonly_fields, "blocks")
+                readonly_fields = (*readonly_fields, "blocks", "state")
         return readonly_fields
 
     def has_delete_permission(self, request, obj=None):
         return False
 
     def save_model(self, request, obj, form, change):
+        previous_state = (
+            TopicVersion.objects.values_list("state", flat=True).get(pk=obj.pk)
+            if change
+            else None
+        )
         if not change:
             obj.version_no = next_topic_version_no(obj.topic)
             obj.author = request.user
             obj.state = "draft"
         super().save_model(request, obj, form, change)
         record_topic_version_event(
-            obj, request.user, "updated" if change else "created"
+            obj,
+            request.user,
+            (
+                "submitted"
+                if previous_state == "draft" and obj.state == "in_review"
+                else "updated" if change else "created"
+            ),
         )
 
 

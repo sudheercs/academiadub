@@ -120,6 +120,7 @@ class CatalogueTests(TestCase):
 
         self.assertTrue(version_admin.has_add_permission(request))
         self.assertIn("blocks", version_admin.get_form(request).base_fields)
+        self.assertIn("state", version_admin.get_form(request).base_fields)
 
         version = TopicVersion(
             topic=self.topic,
@@ -140,6 +141,59 @@ class CatalogueTests(TestCase):
             list(version.events.values_list("action", flat=True)),
             ["created", "updated"],
         )
+
+    def test_admin_can_submit_draft_version_for_review(self):
+        request = RequestFactory().get("/")
+        request.user = self.admin
+        version = TopicVersion.objects.create(
+            topic=self.topic,
+            version_no=1,
+            state="draft",
+            blocks=[{"type": "markdown", "content": "Draft content"}],
+        )
+        version_admin = TopicVersionAdmin(TopicVersion, admin.site)
+        version_form = version_admin.get_form(request, version)(
+            data={
+                "blocks": json.dumps(
+                    [{"type": "markdown", "content": "Draft content"}]
+                ),
+                "state": "in_review",
+            },
+            instance=version,
+        )
+
+        self.assertTrue(version_form.is_valid(), version_form.errors)
+        updated_version = version_form.save(commit=False)
+        version_admin.save_model(request, updated_version, version_form, change=True)
+
+        version.refresh_from_db()
+        self.assertEqual(version.state, "in_review")
+        self.assertEqual(version.events.get().action, "submitted")
+
+    def test_admin_cannot_approve_or_publish_a_draft_directly(self):
+        request = RequestFactory().get("/")
+        request.user = self.admin
+        version = TopicVersion.objects.create(
+            topic=self.topic,
+            version_no=1,
+            state="draft",
+            blocks=[{"type": "markdown", "content": "Draft content"}],
+        )
+        version_admin = TopicVersionAdmin(TopicVersion, admin.site)
+        form_class = version_admin.get_form(request, version)
+
+        for state in ("approved", "published"):
+            form = form_class(
+                data={
+                    "blocks": json.dumps(
+                        [{"type": "markdown", "content": "Draft content"}]
+                    ),
+                    "state": state,
+                },
+                instance=version,
+            )
+            self.assertFalse(form.is_valid())
+            self.assertIn("state", form.errors)
 
     def test_topic_version_can_be_added_from_topic_admin_inline(self):
         request = RequestFactory().get("/")
